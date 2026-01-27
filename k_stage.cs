@@ -1,0 +1,1240 @@
+﻿using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Definitions;
+using FlaUI.Core.Input;
+using FlaUI.Core.Tools;
+using FlaUI.Core.WindowsAPI;
+using FlaUI.UIA3;
+using K1_Stages;
+using Microsoft.Office.Interop.Excel;
+using System.Configuration;
+using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
+using System.IO;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
+using Application = FlaUI.Core.Application;
+using Excel = Microsoft.Office.Interop.Excel;
+using Point = System.Drawing.Point;
+namespace K1_Stages
+{
+    public partial class k_stage : Form
+    {
+        #region variable decl,dll,appconf
+
+        DbConnection dbConnection = new DbConnection();
+
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+        [DllImport("user32.dll")]
+
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private const int SW_MINIMIZE = 6;
+        private const int SW_MAXIMIZE = 3;
+        public string board_status = "";
+        private string currentText = null;
+        private string Model_name = null;
+        private string Disk_size = null;
+        private string Health_status = null;
+        private string Temp_status = null;
+        private string Serial_no = null;
+        private string Firmware_val = null;
+        private string diskletter = null;
+        private int Temp_val = 0;
+        private string Health_stat = null;
+        private int Health_value = 0;
+
+
+        // Timers
+        private System.Windows.Forms.Timer monitorTimer;      // FlaUI UI monitor timer
+        private System.Windows.Forms.Timer fileMonitorTimer;  // SSDMP.txt file monitor timer
+
+        // FlaUI Window reference
+        private FlaUI.Core.AutomationElements.Window mainWindow;
+        
+
+        // SSDMP.txt monitoring
+        private readonly string ssdmpFilePathG3 = ConfigurationManager.AppSettings["File_Path1"];
+        private readonly string ssdmpFilePathG4 = ConfigurationManager.AppSettings["File_Path2"];
+        private readonly string Logsbkppath = ConfigurationManager.AppSettings["BackupfilePath"];
+        public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
+        public string G4appPath = ConfigurationManager.AppSettings["Executable_Path2"];
+
+        public string fileNameg4 = DateTime.Now.ToString("yyyyMMdd");
+
+
+        public string ssdmpFilePath = string.Empty;
+        public string ssdmpG3 = string.Empty;
+        public string ssdmpG4 = string.Empty;
+        private DateTime lastSsdmpReadTime = DateTime.MinValue;
+        private DateTime _lastFileWriteTime = DateTime.MinValue;
+        private bool fileMonitorStarted = false;
+        private string lastHash;
+        public string emp_id = "";
+        public string emp_name = "";
+        public string capacity = ""; // declartion of fg_number
+        public string stage = "";
+
+        public string Gentype = "";
+        private string Filename;
+
+        private bool isHandlingChange = false;
+        bool suppressCapacityEvent = false;
+
+
+
+        #endregion
+
+        #region UI_components
+        public k_stage(string stage_name, string fg, string emp_id, string emp_name,string f_name)
+        {
+            InitializeComponent();
+            this.MaximizeBox = false;
+            lbl_filepathvalue.Enabled = false;
+            lbl_startinfo.Enabled = false;
+            this.MinimizeBox = false;
+
+            //txt_empid.KeyDown += Txtempid_KeyDown;
+            //txt_emp_name.KeyDown += Txtempid_KeyDown;
+            //cmb_stage.Text = "K1";
+            //cmb_stage.Visible = false;
+            //cmb_stage.KeyDown += Txtempid_KeyDown;
+            //cmb_capacity.KeyDown += Txtempid_KeyDown;
+            this.FormClosing += Form1_close;
+            this.Shown += Form1_Shown;
+            k1_stage_test(stage_name, fg, emp_id, emp_name, f_name);
+
+
+
+        }
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            StartPosition = FormStartPosition.Manual;
+
+            Screen screen = Screen.FromControl(this);
+            Location = new Point(
+                screen.WorkingArea.Right - Width,
+                screen.WorkingArea.Top
+            );
+        }
+        private void Form1_close(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Application.Exit();
+        }
+
+        private void k1_stage_test(string stage_val,string fg_no,string employe_id,string employee_name, string f)
+        {
+
+            stage = stage_val;
+            capacity = fg_no;
+            emp_id = employe_id;
+            emp_name = employee_name;
+            Filename = f;
+            Fill_Response_Data("K1 Stage Test started");
+
+            string modelname = dbConnection.getmodel(capacity);
+            Gentype = dbConnection.getgentype(capacity);
+            ssdmpFilePath = Gentype == "Gen4x4" ? ssdmpG4 : ssdmpFilePathG3;
+            writestatusMessage("Start button clicked", "Application_start");
+            
+            Thread.Sleep(1000);
+            Spd_Automation(stage, capacity, Filename, emp_id, emp_name, modelname, Gentype);
+            
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            this.TopMost = true;
+            //this.TopMost = false;
+
+
+
+
+        }
+
+        private void btn_exit_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        #endregion
+
+        #region modeltypehandlerK3
+        public string Spd_Automation(string stageName, string capacity, string Filepath, string emp_id, string emp_name, string model, string Gentype)
+        {
+            try
+            {
+               
+                if (Gentype != "Gen4x4")
+                {
+                    // Initialize and start the SSDMP file monitor timer
+                    fileMonitorTimer = new System.Windows.Forms.Timer
+                    {
+                        Interval = 5000 // Check every 5 seconds
+                    };
+                    fileMonitorTimer.Tick += FileMonitorTimer_Tick;
+                    fileMonitorTimer.Start();
+                    StartAppWithCleanup(G3appPath);
+                    var app = Application.Launch(G3appPath);
+                    app.WaitWhileMainHandleIsMissing();
+
+                    //UI Automation SSDMP Tool 
+                    using var automation = new UIA3Automation();
+                    mainWindow = app.GetMainWindow(automation);
+                    if (mainWindow == null || !mainWindow.Name.StartsWith("SSDMP"))
+                    {
+                        MessageBox.Show("Main window not found or name mismatch for Gen3.");
+                        writestatusMessage("SSDMP Window not found", "Window not found");
+                        return null;
+                    }
+
+                    writestatusMessage("SSDMP Window found", "Window found");
+                    var allButtons = mainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.Button)).ToList();
+                    var allcombo = mainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox)).ToList();
+
+                    // Click the "Load" button (AutomationId: "1168")
+                    var loadButton = allButtons.FirstOrDefault(b => b?.AutomationId == "1168");
+                    loadButton?.WaitUntilClickable(TimeSpan.FromSeconds(2));
+                    loadButton?.AsButton().Invoke();
+
+                    // Wait and find "Open" dialog window under main window
+                    var loadK1Window = Retry.WhileNull(() =>
+                        mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.Window)
+                            .And(cf.ByName("Open"))),
+                        TimeSpan.FromSeconds(5)).Result;
+
+                    if (loadK1Window != null)
+                    {
+                        // Find "File name:" edit box in Open dialog
+                        var filePathEdit = loadK1Window.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.Edit)
+                            .And(cf.ByName("File name:")));
+
+                        string filepathGen3 = Filepath;
+
+                        if (filePathEdit != null)
+                        {
+                            var fpTextBox = filePathEdit.AsTextBox();
+                            fpTextBox.Text = "";
+                            System.Threading.Thread.Sleep(100);
+                            fpTextBox.Text = filepathGen3;
+                        }
+
+                        // Click "Open" button (AutomationId: "1")
+                        var openButton = loadK1Window.FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
+                            .FirstOrDefault(e => e.AutomationId == "1");
+
+                        openButton?.WaitUntilClickable(TimeSpan.FromSeconds(2));
+                        openButton?.AsButton().Invoke();
+                        System.Threading.Thread.Sleep(500);
+
+                        // Select "Device" in ComboBox (AutomationId: "2112")
+                        var comboBoxdevice = mainWindow.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId("2108")));
+                        var cmbdevicecurval = comboBoxdevice.AsComboBox();
+
+                        var cmbdeviceval = cmbdevicecurval.AsTextBox().Text;
+
+                        if (cmbdeviceval != "RTS5766DL")
+                        {
+                            var combodevice = comboBoxdevice?.AsComboBox();
+                            combodevice?.Expand();
+                            System.Threading.Thread.Sleep(500);
+
+                            var itemToSelectdevice = combodevice?.Items?.FirstOrDefault(i => i.Text == "RTS5766DL");
+                            itemToSelectdevice?.Select();
+                            writestatusMessage("RTS5766DL option selected", "Device selected");
+                            System.Threading.Thread.Sleep(50);
+                        }
+
+
+
+                        // Select "RDT" in ComboBox (AutomationId: "2112")
+                        var comboBoxElement = mainWindow.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId("2112")));
+
+                        var cmbk1curval = comboBoxElement.AsComboBox();
+
+                        var cmbk1val = cmbk1curval.AsTextBox().Text;
+
+                        var k1val = stageName == "K1" ? "RDT" :
+                                    stageName == "K2" ? "MP" :
+                                    stageName == "K3" ? "K3" : "0";
+
+                        //if (cmbk1val != k1val)
+                        //{
+                        //    var comboBox = comboBoxElement?.AsComboBox();
+                        //    comboBox?.Expand();
+                        //    System.Threading.Thread.Sleep(500);
+
+
+                        //    var itemToSelect = comboBox?.Items?.FirstOrDefault(i => i.Text == k1val);
+                        //    itemToSelect?.Select();
+                        //    System.Threading.Thread.Sleep(50);
+                        //    Mouse.Click();
+                        //    writestatusMessage($"stage name is {stageName} so {k1val} is selected", "Stage selected");
+                        //    System.Threading.Thread.Sleep(50);
+                        //}
+                        var comboBox = comboBoxElement?.AsComboBox();
+
+                        if (comboBox == null)
+                        {
+                            writestatusMessage("ComboBox not found or is null.", "Error");
+                            return string.Empty;
+                        }
+
+                        comboBox.Expand();
+                        System.Threading.Thread.Sleep(300); // Slight delay to allow items to appear
+
+                        var itemToSelect = comboBox.Items?.FirstOrDefault(i => i.Text.Equals(k1val, StringComparison.OrdinalIgnoreCase));
+
+                        if (itemToSelect != null)
+                        {
+                            itemToSelect.Select();
+                            System.Threading.Thread.Sleep(100);
+                            itemToSelect.Click();
+                            writestatusMessage($"Stage name is {stageName}, so '{k1val}' is selected.", "Stage selected");
+                        }
+                        else
+                        {
+                            writestatusMessage($"Item '{k1val}' not found in ComboBox for stage '{stageName}'.", "Selection Failed");
+                        }
+
+                        // Edit textboxes for capacity and model (AutomationIds "1021" and "1025")
+                        var textboxMem = mainWindow.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.Edit).And(cf.ByAutomationId("1021")));
+                        var textboxMod = mainWindow.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.Edit).And(cf.ByAutomationId("1025")));
+
+                        if (textboxMem != null && textboxMod != null)
+                        {
+                            var memTextBox = textboxMem.AsTextBox();
+                            var modTextBox = textboxMod.AsTextBox();
+
+                            string memCurrentVal = memTextBox.Text;
+                            string modCurrentVal = modTextBox.Text;
+
+                            string expectedValue = filepathGen3.Contains("256GB") ? "256" :
+                                                   filepathGen3.Contains("512GB") ? "512" :
+                                                   filepathGen3.Contains("1TB") ? "1024" : "0";
+
+                            if (memCurrentVal != expectedValue)
+                            {
+                                memTextBox.Text = "";
+                                System.Threading.Thread.Sleep(100);
+                                memTextBox.Enter(expectedValue);
+                                writestatusMessage($"Capacity {expectedValue} is selected", "capacity selected");
+                            }
+
+                            modTextBox.Text = model;
+                            writestatusMessage($"The model value is{model}", "Model selected");
+
+                        }
+                    }
+
+                    return "Completed";
+                }
+                else
+                {
+                    // Initialize and start the SM2268XT2_MPTool file monitor timer
+                    fileMonitorTimer = new System.Windows.Forms.Timer
+                    {
+                        Interval = 5000 // Check every 5 seconds
+                    };
+                    fileMonitorTimer.Tick += FileMonitorTimer_Tick;
+                    fileMonitorTimer.Start();
+                    StartAppWithCleanup(G4appPath);
+                    var app = Application.Launch(G4appPath);
+                    app.WaitWhileMainHandleIsMissing();
+
+                    //UI Automation for SM2268XT2_MPTool 
+
+                    using var automation = new UIA3Automation();
+                    mainWindow = app.GetMainWindow(automation);
+                    if (mainWindow == null || !mainWindow.Name.StartsWith("SM2268XT2 MPTool"))
+                    {
+                        MessageBox.Show("Main window not found or name mismatch for Gen4.");
+                        writestatusMessage("SM2268XT2 MPTool Window not found", "Window not found");
+                        return null;
+                    }
+                    Thread.Sleep(1000);
+                    var parameterTab = mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Parameter")));
+                    if (parameterTab != null)
+                    {
+                        parameterTab.Click();  // Works for Win32 tabs
+
+                    }
+                    else
+                    {
+                        MessageBox.Show("Parameter tab not found");
+                        writestatusMessage("Parameter tab not found", "Tab not found");
+                    }
+                    Thread.Sleep(500);
+
+                    var fileloadbtn = mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("657")));
+
+                    if (fileloadbtn != null)
+                    {
+                        fileloadbtn.WaitUntilClickable(TimeSpan.FromSeconds(2));
+                        fileloadbtn.Click();
+                    }
+                    else
+                    {
+                        MessageBox.Show("File open button not found");
+                        writestatusMessage("File open button not found", "Button not found");
+                    }
+
+                    // Wait and find "Open" dialog window under main window
+                    var loadK1Window = Retry.WhileNull(() => mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.Window).And(cf.ByName("Open"))), TimeSpan.FromSeconds(5)).Result;
+
+                    if (loadK1Window != null)
+                    {
+                        // Find "File name:" edit box in Open dialog
+                        var filePathEdit = loadK1Window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Edit).And(cf.ByName("File name:")));
+
+                        string filepathGen4 = Filepath;
+
+                        if (filePathEdit != null)
+                        {
+                            var fpTextBox = filePathEdit.AsTextBox();
+                            fpTextBox.Text = "";
+                            System.Threading.Thread.Sleep(100);
+                            fpTextBox.Text = filepathGen4;
+                        }
+
+                        else
+                        {
+                            MessageBox.Show("File path in File load dialog box not found");
+                            writestatusMessage("File path in File load dialog box not found", "Text box Not found");
+                        }
+
+
+                        var openButton = loadK1Window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("1")));
+
+                        openButton?.WaitUntilClickable(TimeSpan.FromSeconds(2));
+                        openButton?.AsButton().Invoke();
+                        System.Threading.Thread.Sleep(500); ;
+
+                        var TestTab = mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Test"))
+                                                );
+                        if (TestTab != null)
+                        {
+                            TestTab.Click();  // Works for Win32 tabs
+                        }
+
+                        else
+                        {
+                            MessageBox.Show("File open btn in File load dialog box not found");
+                            writestatusMessage("File open btn in File load dialog box not found", "Button Not found");
+                        }
+                        Thread.Sleep(2000);
+
+
+                    }
+                    return "Completed";
+                }
+
+            }
+
+
+
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("An error occurred trying to start process"))
+                {
+                    MessageBox.Show("Open the Application in Administartor");
+                    return null;
+                }
+                else
+                {
+                    MessageBox.Show("Error in automation: " + ex.Message);
+                    return null;
+                }
+
+            }
+        }
+        #endregion
+
+        #region Filehandling
+        public static void StartAppWithCleanup(string exePath)
+        {
+            string processName = Path.GetFileNameWithoutExtension(exePath);
+            var runningProcesses = Process.GetProcessesByName(processName);
+            foreach (var process in runningProcesses)
+            {
+                try
+                {
+                    // Step 2: Kill it
+                    process.Kill();
+                    process.WaitForExit();
+                    Console.WriteLine($"Closed existing instance of {processName}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Could not close {processName}: {ex.Message}");
+                }
+            }
+        }
+
+
+        private void FileMonitorTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+
+                if (!File.Exists(ssdmpFilePath))
+                    return;
+
+                var currentWriteTime = File.GetLastWriteTime(ssdmpFilePath);
+
+
+
+                // Only process the file if it's been modified since last time
+                if (currentWriteTime > _lastFileWriteTime)
+                {
+
+                    try
+                    {
+                        string Currenthash = GetFileHash(ssdmpFilePath);
+                        if (Currenthash != lastHash)
+                        {
+                            lastHash = Currenthash;
+
+                            EvaluateLastValidDUT(ssdmpFilePath, emp_id, emp_name, Gentype, capacity);
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("File timestamp changed, but content is the same.");
+                            writestatusMessage($"File timestamp changed, but content is the same", "File Timestamp");
+                            return;
+                        }
+
+                        _lastFileWriteTime = currentWriteTime;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("File in use — will retry...");
+
+                    }
+
+
+                    string content = File.ReadAllText(ssdmpFilePath);
+                    Console.WriteLine("File changed at " + currentWriteTime);
+                    Console.WriteLine("Content:\n" + content);
+
+                    // Add your file processing logic here
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading file: " + ex.Message);
+            }
+        }
+        static string GetFileHash(string path)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            using (var stream = File.OpenRead(path))
+            {
+                var hash = md5.ComputeHash(stream);
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            }
+
+        }
+
+
+        public static void EvaluateLastValidDUT(string filePath, string emp_id, string emp_name, string Gtype, string fgno)
+        {
+
+            string status = string.Empty;
+            string testTime = string.Empty;
+            string model = string.Empty;
+            string serial = string.Empty;
+            string capacity = string.Empty;
+            string station = string.Empty;
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("Log file not found.");
+                return;
+            }
+
+            if (Gtype == "Gen4x4")
+            {
+                string lastLine = File.ReadLines(filePath).LastOrDefault();
+                string pattern = @"^(\S+)\s+(\S+)\s+(\S+\s+\S+)\s+(\S+\s+\S+)\s+(\S+)\s+(\S+)\s+(.+)$";
+                var m = Regex.Match(lastLine, pattern);
+
+                if (!m.Success)
+                    return;
+                capacity = fgno; station = "K3";
+                string port = m.Groups[2].Value;
+                string start = m.Groups[3].Value;
+                string end = m.Groups[4].Value;
+                serial = m.Groups[5].Value.Trim();
+                model = m.Groups[6].Value.Trim();
+                status = m.Groups[7].Value.Trim();
+
+                DateTime startTime = DateTime.Parse(start);
+                DateTime endTime = DateTime.Parse(end);
+
+                double durationSeconds = (endTime - startTime).TotalSeconds;
+                testTime = durationSeconds.ToString();
+
+                Console.WriteLine($"Serial: {serial}, Status: {status}, Duration: {durationSeconds}s");
+            }
+
+            else
+            {
+                string content = File.ReadAllText(filePath);
+                var matches = Regex.Matches(content, @"\*{8}\[DUT \d\].+?\*{8}([\s\S]*?)(?=\*{8}\[DUT|\Z)");
+
+                if (matches.Count == 0)
+                {
+                    Console.WriteLine("No DUT blocks found.");
+                    return;
+                }
+
+                string lastValidBlock = null;
+
+
+                for (int i = matches.Count - 1; i >= 0; i--)
+                {
+                    var block = matches[i].Groups[1].Value;
+
+                    if (block.Contains("Test time"))
+                    {
+                        lastValidBlock = block;
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(lastValidBlock))
+                {
+                    Console.WriteLine("No valid DUT blocks with result data found.");
+                    return;
+                }
+
+
+                string pattern = @"\b(Pass|Fail)\b(?:\s+\([^\)]+\))?\s+Test time:";
+                status = Regex.Match(lastValidBlock, pattern).Groups[1].Value.Trim();
+                testTime = Regex.Match(lastValidBlock, @"Test time:\s*(.+)").Groups[1].Value.Trim();
+                model = Regex.Match(lastValidBlock, @"Model name:\s*(.+)").Groups[1].Value.Trim();
+                serial = Regex.Match(lastValidBlock, @"Serial number:\s*(.+)").Groups[1].Value.Trim();
+                capacity = Regex.Match(lastValidBlock, @"Capacity:\s*(.+)").Groups[1].Value.Trim();
+                station = Regex.Match(lastValidBlock, @"Station:\s*(.+)").Groups[1].Value.Trim();
+
+            }
+
+
+
+
+            DbConnection dbconnect = new DbConnection();
+
+            var ser_len = serial.Length;
+
+
+            if (ser_len < 18 && serial.StartsWith("E"))
+            {
+                var stage_count = dbconnect.get_serial_dup(serial, model);
+
+                if (stage_count == "0" || stage_count == "Status not found")
+                {
+
+                    dbconnect.DbConnect(serial, model, capacity, station, testTime, status);
+
+
+
+
+                    var displayColor = status.Equals("Pass", StringComparison.OrdinalIgnoreCase) ? Color.Green : Color.Red;
+
+
+                    // Debug output
+                    System.Diagnostics.Debug.WriteLine("---- Last Valid DUT Result ----");
+                    System.Diagnostics.Debug.WriteLine($"status   : {status}");
+                    System.Diagnostics.Debug.WriteLine($"test_time : {testTime}");
+                    System.Diagnostics.Debug.WriteLine($"model    : {model}");
+                    System.Diagnostics.Debug.WriteLine($"serial_no  : {serial}");
+                    System.Diagnostics.Debug.WriteLine($"capacity : {capacity}");
+                    System.Diagnostics.Debug.WriteLine($"station  : {station}");
+
+
+
+
+                    if (status.Equals("Pass", StringComparison.OrdinalIgnoreCase))
+                    {
+
+                        ////var qc = new k_stage();
+                        //writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is Pass in K3 and moved for Qc", "Board status");
+                        //qc.qcstage_validation(serial, capacity, emp_id, emp_name);
+
+                        return;
+                    }
+                    else
+                    {
+                        popup.ShowDialogMessage($"{serial} -- {status} at K3", displayColor, Color.White, false);
+                        writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail in K3", "Board status");
+                        return;
+                    }
+
+                }
+
+                else if (stage_count == "1")
+                {
+                    // var displayColor =
+                    popup.ShowDialogMessage($"{serial} --is already pass at K3 Please scan the next serial Number", Color.Red, Color.White, false);
+                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is already pass at k3", "Board status");
+                    return;
+                }
+
+                else if (stage_count == "2")
+                {
+                    // var displayColor = Color.Red;
+                    popup.ShowDialogMessage($"{serial} --is already fail at K3 Please scan the next serial Number", Color.Red, Color.White, false);
+                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is already fail at k3", "Board status");
+                    return;
+                }
+
+                else
+                {
+                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} status not found", "Board status");
+                    return;
+                }
+
+
+            }
+
+            else
+            {
+
+                writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail -Serial Number not scanned", "Board status");
+
+                popup.ShowDialogMessage($"Please scan the correct serial Number", Color.Red, Color.White, false);
+                return;
+            }
+
+
+        }
+
+        #endregion 
+
+        private void Fill_Response_Data(string datarep)
+        {
+            txt_live_stat.AppendText(
+                DateTime.Now.ToString("HH:mm:ss.fff") + " : " + datarep + "\n"
+            );
+
+            txt_live_stat.SelectionStart = txt_live_stat.TextLength;
+            txt_live_stat.ScrollToCaret();
+
+            base.Update();
+            
+            System.Windows.Forms.Application.DoEvents();
+        }
+
+
+        #region QC_Valdiation
+
+
+        //public void qcstage_validation(string serialno, string capacity, string emp_id, string emp_name)
+        //{
+        //    writestatusMessage($"Serial No: {serialno}-- Capacity: {capacity} is pass and in Qc stage", "Board status");
+        //    var fg_num = dbConnection.getfgname(serialno);
+        //    if ((!string.IsNullOrEmpty(fg_num)))
+        //    {
+        //        writestatusMessage($"Serialno :{serialno}-- Fgno :{fg_num}", "FgName-SerialNumber");
+        //        var fg_details_list = dbConnection.getfgdetails(fg_num);
+        //        foreach (var fg_detail in fg_details_list)
+        //        {
+        //            var Model = fg_detail.Model;
+        //            var Firmware = fg_detail.Firmware;
+        //            var Disksize = fg_detail.Disksize;
+        //            writestatusMessage($"Serialno :{serialno}-- Fgno :{fg_num}--Model :{Model}--Firmware :{Firmware}--Disksize :{Disksize}", "Fg details");
+        //            processScannedText(Model, Firmware, Disksize, serialno, fg_num, emp_id, emp_name);
+
+        //        }
+
+
+        //    }
+        //    else
+        //    {
+
+        //        MessageBox.Show("No Fg details Found for the provided Serial number");
+        //        return;
+        //    }
+
+
+        //}
+        //private bool serialnopass = true;
+        //private bool firwarepass = true;
+        //private bool modelnopass = true;
+        //private bool healthstatpass = true;
+        //private bool temperaturepass = true;
+        //private bool driveletterpass = true;
+        //private bool diskSizePass = true;
+        //private bool ignoreTextChange = false;
+
+
+
+        //public void processScannedText(string Modeldb, string firmwaredb, string Disksizedb, string serialnodb, string fgnodb,
+        //                               string emp_iddb, string emp_namedb)
+        //{
+        //    SetProcessDPIAware();
+
+        //    string exePath = ConfigurationManager.AppSettings["exePath"];
+        //    if (!File.Exists(exePath))
+        //    {
+        //        MessageBox.Show("Application file not found at path: " + exePath);
+        //        writestatusMessage($"CrystalDisk App path not found", "Application Not found");
+        //        return;
+        //    }
+        //    string processName = Path.GetFileNameWithoutExtension(exePath);
+        //    string savePath = ConfigurationManager.AppSettings["savePath"];
+
+        //    if (!Directory.Exists(Path.GetDirectoryName(savePath)))
+        //    {
+        //        writestatusMessage($"CrystalDisk file path not found", "File Not found");
+        //        Directory.CreateDirectory(Path.GetDirectoryName(savePath));
+        //    }
+
+        //    try
+        //    {
+        //        Process crystalprocess = null;
+        //        ManualResetEvent loadingFormReady = new ManualResetEvent(false);
+        //        LoadingForm loadingForm = null;
+
+        //        Thread loadingThread = new Thread(() =>
+        //        {
+        //            loadingForm = new LoadingForm();
+        //            loadingForm.Load += (s, e) => loadingFormReady.Set();  // Signal that form is ready
+        //            System.Windows.Forms.Application.Run(loadingForm);
+        //        });
+        //        loadingThread.SetApartmentState(ApartmentState.STA);
+        //        loadingThread.Start();
+
+        //        // Wait for the loading form to be fully loaded
+        //        loadingFormReady.WaitOne();
+
+
+        //        try
+        //        {
+        //            var existingProcess = Process.GetProcessesByName(processName).FirstOrDefault();
+
+        //            if (existingProcess == null)
+        //            {
+        //                crystalprocess = Process.Start(exePath);
+
+        //                // Wait for window (up to 30s)
+        //                int timeout = 30000;
+        //                int waited = 0;
+        //                int interval = 500;
+
+
+        //                while (crystalprocess.MainWindowHandle == IntPtr.Zero && waited < timeout)
+        //                {
+        //                    Thread.Sleep(interval);
+        //                    waited += interval;
+        //                    crystalprocess.Refresh();
+
+        //                }
+
+        //                if (crystalprocess.MainWindowHandle == IntPtr.Zero)
+        //                {
+        //                    writestatusMessage("CrystalDiskInfo UI window not ready", "Timeout waiting for window");
+        //                    return;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                crystalprocess = existingProcess;
+        //            }
+        //        }
+        //        finally
+        //        {
+
+        //            // loadingForm.Invoke(new System.Action(() => loadingForm.Close()));
+        //            //  CLOSE LOADING UI
+
+        //            if (loadingForm != null && loadingForm.IsHandleCreated)
+        //            {
+        //                loadingForm.Invoke(new System.Action(() =>
+        //                {
+        //                    loadingForm.Close();
+        //                }));
+        //            }
+
+
+        //        }
+
+        //        //  Continue with the rest of your code
+        //        using (var automation = new UIA3Automation())
+        //        {
+        //            var desktop = automation.GetDesktop();
+        //            Thread.Sleep(500);
+
+        //            var processes = Process.GetProcesses()
+        //                .Where(p => !string.IsNullOrEmpty(p.MainWindowTitle) && p.MainWindowTitle.Contains("CrystalDiskInfo"));
+
+        //            foreach (var process in processes)
+        //            {
+        //                try
+        //                {
+        //                    var app = FlaUI.Core.Application.Attach(process);
+        //                    var mainWindow = app.GetMainWindow(automation);
+
+        //                    if (mainWindow == null)
+        //                    {
+        //                        writestatusMessage($"CrystalDisk App window not found", "App window Not found");
+        //                        continue;
+        //                    }
+
+        //                    writestatusMessage($"CrystalDisk App window  found", "App window  found");
+
+        //                    // Maximize and focus the window
+        //                    ShowWindow(mainWindow.Properties.NativeWindowHandle.ValueOrDefault, SW_MAXIMIZE);
+        //                    mainWindow.Focus();
+        //                    Thread.Sleep(500);
+
+        //                    // Optionally click the disk button with AutomationId "1021"
+        //                    Keyboard.Type(VirtualKeyShort.F6);
+        //                    writestatusMessage("F6 button clicked for refresh", "F6 button click");
+        //                    Thread.Sleep(5000); // Let it refresh
+
+        //                    var targetButton = mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("1021"))?.AsButton();
+        //                    if (targetButton == null)
+        //                    {
+        //                        Console.WriteLine("Button Not found");
+        //                        writestatusMessage("Disk button Not found for Essencore disk", "Disk button not found for click");
+
+        //                    }
+
+        //                    targetButton.Invoke();
+        //                    Thread.Sleep(700);
+        //                    writestatusMessage("Disk button clicked for Essencore disk", "Disk button click");
+        //                    var editElement_Mod = mainWindow.FindFirstDescendant(cf =>
+        //                                          cf.ByAutomationId("1012").And(cf.ByControlType(ControlType.Edit)));
+
+        //                    if (editElement_Mod == null)
+        //                    {
+        //                        Console.WriteLine("Edit control not found.");
+        //                        writestatusMessage("Model label not found", "Model label not found");
+        //                        return;
+        //                    }
+        //                    writestatusMessage("Model label  found", "Model label  found");
+
+        //                    // Try ValuePattern
+        //                    var valuePattern = editElement_Mod.Patterns.Value.PatternOrDefault;
+        //                    if (valuePattern != null)
+        //                    {
+        //                        currentText = valuePattern.Value;
+        //                        Console.WriteLine($"Edit control text: {currentText}");
+        //                        writestatusMessage($"Model text: {currentText}", "Model label found");
+        //                    }
+        //                    else
+        //                    {
+        //                        Console.WriteLine("ValuePattern is not supported for this Edit control.");
+
+        //                    }
+
+        //                    var Model_val = currentText;
+        //                    if (Model_val != null)
+        //                    {
+
+
+        //                        // Regex: captures everything before the size and then the size itself
+        //                        var match1 = Regex.Match(Model_val, @"^(.*)\s(\d+(?:\.\d+)?)\s(GB|MB)$");
+
+        //                        if (match1.Success)
+        //                        {
+        //                            Model_name = match1.Groups[1].Value.Trim();       // "ESSENCORE NVME GEN3 SSD"
+        //                            Disk_size = match1.Groups[2].Value + " GB";       // "256.0 GB"
+        //                            writestatusMessage($"Model name: {Model_name} DiskSize {Disk_size}", "Model value found");
+        //                            Console.WriteLine($"Name: {Model_name}");
+        //                            Console.WriteLine($"Size: {Disk_size}");
+        //                        }
+        //                        else
+        //                        {
+        //                            Console.WriteLine("No match.");
+        //                        }
+
+
+        //                    }
+        //                    var health_stat_btn = mainWindow.FindFirstDescendant(cf =>
+        //                                cf.ByAutomationId("1047").And(cf.ByControlType(ControlType.Button)));
+        //                    var temp_stat_btn = mainWindow.FindFirstDescendant(cf =>
+        //                                cf.ByAutomationId("1049").And(cf.ByControlType(ControlType.Button)));
+
+        //                    if (health_stat_btn == null && temp_stat_btn == null)
+        //                    {
+        //                        Console.WriteLine("health status and temp_status not found.");
+        //                        writestatusMessage("health status and temp_status not found", "Heath & Temp status not found");
+        //                        return;
+        //                    }
+
+        //                    Health_status = health_stat_btn.Name.ToString();
+        //                    Temp_status = temp_stat_btn.Name.ToString();
+
+
+        //                    Match Temp_match = Regex.Match(Temp_status, @"\d+");
+
+        //                    if (Temp_match.Success)
+        //                    {
+        //                        Temp_val = int.Parse(Temp_match.Value);
+        //                        Console.WriteLine(Temp_val); // Output: 36
+        //                    }
+        //                    else
+        //                    {
+        //                        Console.WriteLine("No number found.");
+        //                    }
+
+        //                    var Firmware_element = mainWindow.FindFirstDescendant(cf =>
+        //                        cf.ByAutomationId("1014").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Document)));
+        //                    var serialno_element = mainWindow.FindFirstDescendant(cf =>
+        //                        cf.ByAutomationId("1015").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Document)));
+        //                    var disk_letr_element = mainWindow.FindFirstDescendant(cf =>
+        //                        cf.ByAutomationId("1031").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Document)));
+
+        //                    if (Firmware_element == null && serialno_element == null && disk_letr_element == null)
+        //                    {
+        //                        Console.WriteLine("Firmware & Serialno & Disk letter control not found.");
+        //                        return;
+        //                    }
+
+        //                    // 2. Try getting Text using TextPattern
+        //                    var txt_Pattern_Firmware = Firmware_element.Patterns.Text.PatternOrDefault;
+        //                    var txt_Pattern_Serialno = serialno_element.Patterns.Text.PatternOrDefault;
+        //                    var txt_Pattern_Diskltr = disk_letr_element.Patterns.Text.PatternOrDefault;
+        //                    if (txt_Pattern_Firmware == null && txt_Pattern_Serialno == null && txt_Pattern_Diskltr == null)
+        //                    {
+        //                        Console.WriteLine("Serial no & Firmware & Diskletter not found.");
+        //                        return;
+        //                    }
+        //                    Serial_no = txt_Pattern_Serialno.DocumentRange.GetText(-1);
+        //                    Firmware_val = txt_Pattern_Firmware.DocumentRange.GetText(-1);
+        //                    diskletter = txt_Pattern_Diskltr.DocumentRange.GetText(-1);
+        //                    writestatusMessage($"Serial_nos: {Serial_no}--Firmware_val:{Firmware_val}--Diskletter :{diskletter} ", "Heath & Temp status found");
+
+        //                    var Health_match = Regex.Match(Health_status, @"^(.*)\s+(\d+)\s*%?$", RegexOptions.Singleline);
+
+        //                    if (Health_match.Success)
+        //                    {
+        //                        Health_stat = Health_match.Groups[1].Value.Trim();
+        //                        Health_value = int.Parse(Health_match.Groups[2].Value);
+        //                        Console.WriteLine($"Status: {Health_stat}");
+        //                        Console.WriteLine($"Value: {Health_value}");
+        //                        writestatusMessage($"Health status: {Health_stat}--Temp_status:{Health_value}", "Heath & Temp status found");
+        //                    }
+        //                    else
+        //                    {
+        //                        Console.WriteLine("Pattern not matched.");
+        //                    }
+
+        //                    bool serialnopass = false, firwarepass = false, modelnopass = false,
+        //                    temperaturepass = false, healthstatpass = false, driveletterpass = false, diskSizePass = false;
+
+        //                    if (!string.IsNullOrWhiteSpace(diskletter))
+        //                    {
+
+        //                        driveletterpass = false;
+        //                    }
+        //                    else
+        //                    {
+
+        //                        diskletter = "Null";
+        //                        driveletterpass = true;
+        //                    }
+        //                    serialnopass = Serial_no.Trim() == serialnodb;
+        //                    firwarepass = Firmware_val.Trim() == firmwaredb;
+        //                    modelnopass = Model_name.Equals(Modeldb.Trim(), StringComparison.OrdinalIgnoreCase);
+        //                    temperaturepass = (Temp_val > 25) && (Temp_val < 70);
+        //                    healthstatpass = Health_stat.Equals("Good", StringComparison.OrdinalIgnoreCase) && Health_value > 80;
+        //                    diskSizePass = Disk_size.Equals(Disksizedb.Trim());
+
+        //                    bool allPass = serialnopass && firwarepass && modelnopass &&
+        //                          temperaturepass && healthstatpass && driveletterpass && diskSizePass;
+
+        //                    if (allPass)
+        //                    {
+        //                        board_status = "PASS";
+        //                        writestatusMessage($"Serial no: {Serial_no} is Pass", "Final QC status");
+        //                        popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Green, Color.White, true);
+        //                    }
+        //                    else
+        //                    {
+        //                        board_status = "FAIL";
+        //                        writestatusMessage($"Serial no: {Serial_no} is Fail", "Final QC status");
+        //                        popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Red, Color.White, false);
+        //                    }
+
+        //                    var record = new QcDataRecord
+        //                    {
+
+        //                        emp_id = emp_iddb,
+        //                        emp_name = emp_namedb,
+        //                        Fg_no = fgnodb,
+        //                        SerialNumber = Serial_no,
+        //                        Firmware = Firmware_val,
+        //                        Temperature = Temp_val,
+        //                        HealthStatus = Health_status,
+        //                        ModelNumber = Model_name,
+        //                        DriveLetter = diskletter,
+        //                        DiskSize = Disk_size,
+        //                        boardstatus = board_status
+        //                    };
+
+
+        //                    List<QcDataRecord> records = new List<QcDataRecord> { record };
+
+        //                    // Pass the list to the upload function
+        //                    dbConnection.uploadresult(records);
+
+
+        //                    try
+        //                    {
+        //                        if (crystalprocess != null && !crystalprocess.HasExited)
+        //                        {
+        //                            crystalprocess.Kill();
+        //                            crystalprocess.WaitForExit();
+        //                        }
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        MessageBox.Show("Failed to close CrystalDiskInfo process: " + ex.Message);
+        //                    }
+
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    MessageBox.Show("Error:" + ex.Message);
+        //                }
+
+        //            }
+        //        }
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        MessageBox.Show(" Error: " + ex.Message);
+        //    }
+        //}
+
+
+        //private string GetClipboardTextSafe()
+        //{
+        //    string clipboardText = string.Empty;
+        //    var thread = new Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            clipboardText = Clipboard.GetText();
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show("Clipboard Error: " + ex.Message);
+        //        }
+        //    });
+        //    thread.SetApartmentState(ApartmentState.STA);
+        //    thread.Start();
+        //    thread.Join();
+        //    return clipboardText;
+        //}
+        //private void ClearClipboardSafe()
+        //{
+        //    var thread = new Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            bool cleared = false;
+        //            for (int i = 0; i < 3 && !cleared; i++)
+        //            {
+        //                Clipboard.Clear();
+        //                if (string.IsNullOrWhiteSpace(Clipboard.GetText()))
+        //                {
+        //                    cleared = true;
+        //                    break;
+        //                }
+        //                Thread.Sleep(300);
+        //            }
+
+        //            // Use BeginInvoke to prevent deadlock
+        //            this.BeginInvoke(new System.Action(() =>
+        //            {
+        //                if (!cleared)
+        //                    MessageBox.Show(" Clipboard could not be cleared after retries.");
+        //                else
+        //                    MessageBox.Show(" Clipboard cleared successfully.");
+        //            }));
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            this.BeginInvoke(new System.Action(() =>
+        //            {
+        //                MessageBox.Show("Clipboard Clear Error: " + ex.Message);
+        //            }));
+        //        }
+        //    });
+
+        //    thread.SetApartmentState(ApartmentState.STA);
+        //    thread.Start(); // no .Join() to avoid deadlock
+        //}
+
+
+        //private List<string> tempImageFiles = new List<string>();
+        //private void SaveImageSafe(Bitmap bmp, string baseFileName)
+        //{
+        //    try
+        //    {
+        //        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+        //            $"{baseFileName}_{DateTime.Now:yyyyMMdd_HHmmssfff}.png");
+        //        bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+        //        tempImageFiles.Add(filePath);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($" Failed to save image {baseFileName}: {ex.Message}");
+        //    }
+        //}
+
+
+        private void pic_status_Click(object sender, EventArgs e)
+        {
+            ReportForm reportForm = new ReportForm();
+
+            reportForm.ShowDialog();
+
+        }
+
+        #endregion
+
+        #region Errorlogs
+        public static void writestatusMessage(string Status_message, string functionName)
+        {
+            var systemPath = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Syrma_Training_Errors" + "\\" + DateTime.Now.ToString("dd-MM-yyyy");
+
+            if (!Directory.Exists(systemPath))
+            {
+                Directory.CreateDirectory(systemPath);
+            }
+
+            string StatusLog = String.Format(@"{0}\{1}.txt", systemPath, "StatusLogK3QC");
+            using (StreamWriter statLogs = new StreamWriter(StatusLog, true))
+            {
+                statLogs.WriteLine("--------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+                statLogs.WriteLine("---------------------------------------------------" + DateTime.Now + "----------------------------------------------" + Environment.NewLine);
+                statLogs.WriteLine(Environment.NewLine + "-----" + functionName + "-----");
+                statLogs.WriteLine(Status_message + Environment.NewLine);
+                statLogs.Close();
+            }
+        }
+
+        #endregion
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
+

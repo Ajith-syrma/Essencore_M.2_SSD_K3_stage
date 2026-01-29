@@ -16,6 +16,7 @@ namespace K1_Stages
     {
         SqlConnection con = new SqlConnection(ConfigurationManager.AppSettings["conn"].ToString());
         SqlConnection con1 = new SqlConnection(ConfigurationManager.AppSettings["conn1"].ToString());
+        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["conn2"].ToString());
         SqlCommand cmd;
         SqlDataAdapter adapter;
         SqlDataReader reader;
@@ -216,6 +217,37 @@ namespace K1_Stages
             }
         }
 
+        public List<appFgdetails> get_app_Name(string fg_name,string stage_name)
+        {
+            try
+            {
+
+                var lstappfg = new List<appFgdetails>();
+                cmd = new SqlCommand("pro_get_app_Name", Essencore_db);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@fg_name", fg_name);
+                cmd.Parameters.AddWithValue("@stage_name", stage_name);
+                adapter = new SqlDataAdapter(cmd);
+                dt = new DataTable();
+                adapter.Fill(dt);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    var objappfg = new appFgdetails();
+                    objappfg.app_name = Convert.ToString(dr["app_name"]);
+                    objappfg.app_path = Convert.ToString(dr["app_path"]);
+                    objappfg.app_logpath = Convert.ToString(dr["app_logpath"]);
+                    objappfg.fg_model = Convert.ToString(dr["fg_model"]);
+                    lstappfg.Add(objappfg);
+                }
+                return lstappfg;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error", "Database not connected");
+                return new List<appFgdetails>();
+            }
+        }   
+          
         public void uploadresult(List<QcDataRecord> records)
         {
             try
@@ -314,15 +346,16 @@ namespace K1_Stages
 
         //}
 
-        public List<string> getcapacity(string stageval)
+        public List<string> getcapacity(string stageval,string product_Model)
         {
             var listcapacity = new List<string>();
             try
             {
                 
-                cmd = new SqlCommand("pro_get_capacity_details", con);
+                cmd = new SqlCommand("pro_get_capacity_details", Essencore_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@stage", stageval);
+                cmd.Parameters.AddWithValue("@Product_Type", stageval);
                 adapter = new SqlDataAdapter(cmd);
                 dt = new DataTable();
                 adapter.Fill(dt);

@@ -23,6 +23,24 @@ namespace K1_Stages
         //public string Dublicate { get; set; }
 
     }
+    class appFgdetails
+    {
+        //  public int barcodeid { get; set; }
+        public string app_name { get; set; }
+        public string fg_model { get; set; }
+        public string app_path { get; set; }
+        public string app_logpath { get; set; }
+        //public string Disksize { get; set; }
+        // public string Bar_Description { get; set; }
+        //public string ProductNo { get; set; }
+        //public string CustomerSerialNo { get; set; }
+        //public string PCBSerialNo { get; set; }
+        ////public string DateandTime { get; set; }
+        ////public string ShiftType { get; set; }
+        //public int WeekDetails { get; set; }
+        //public string Dublicate { get; set; }
+
+    }
 
     public class QcDataRecord
     {

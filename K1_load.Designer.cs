@@ -49,6 +49,8 @@
             lbl_startinfo = new Label();
             label2 = new Label();
             cmb_stage = new ComboBox();
+            lbl_prd_model = new Label();
+            cmb_prdctModel = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
@@ -149,7 +151,7 @@
             // 
             // txt_emp_name
             // 
-            txt_emp_name.Location = new Point(469, 195);
+            txt_emp_name.Location = new Point(469, 154);
             txt_emp_name.Name = "txt_emp_name";
             txt_emp_name.Size = new Size(183, 31);
             txt_emp_name.TabIndex = 27;
@@ -158,7 +160,7 @@
             // 
             lbl_emp_name.AutoSize = true;
             lbl_emp_name.Font = new Font("Bell MT", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lbl_emp_name.Location = new Point(290, 196);
+            lbl_emp_name.Location = new Point(290, 154);
             lbl_emp_name.Name = "lbl_emp_name";
             lbl_emp_name.Size = new Size(130, 29);
             lbl_emp_name.TabIndex = 26;
@@ -166,7 +168,7 @@
             // 
             // txt_empid
             // 
-            txt_empid.Location = new Point(469, 142);
+            txt_empid.Location = new Point(469, 109);
             txt_empid.Name = "txt_empid";
             txt_empid.Size = new Size(183, 31);
             txt_empid.TabIndex = 24;
@@ -175,7 +177,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Bell MT", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label3.Location = new Point(268, 144);
+            label3.Location = new Point(268, 111);
             label3.Name = "label3";
             label3.Size = new Size(152, 29);
             label3.TabIndex = 23;
@@ -211,6 +213,7 @@
             cmb_capacity.Name = "cmb_capacity";
             cmb_capacity.Size = new Size(183, 33);
             cmb_capacity.TabIndex = 20;
+            cmb_capacity.SelectedIndex = 0;
             cmb_capacity.SelectedValueChanged += cmbcapacity_SelectedIndexChanged;
             // 
             // label4
@@ -265,11 +268,35 @@
             cmb_stage.Size = new Size(183, 33);
             cmb_stage.TabIndex = 32;
             // 
+            // lbl_prd_model
+            // 
+            lbl_prd_model.AutoSize = true;
+            lbl_prd_model.Font = new Font("Bell MT", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lbl_prd_model.Location = new Point(339, 197);
+            lbl_prd_model.Name = "lbl_prd_model";
+            lbl_prd_model.Size = new Size(81, 29);
+            lbl_prd_model.TabIndex = 34;
+            lbl_prd_model.Text = "Model";
+
+            // 
+            // cmb_prdctModel
+            // 
+            cmb_prdctModel.FormattingEnabled = true;
+            cmb_prdctModel.Items.AddRange(new object[] { "Select model", "M.2", "SSD_SATA" });
+            cmb_prdctModel.Location = new Point(469, 197);
+            cmb_prdctModel.Name = "cmb_prdctModel";
+            cmb_prdctModel.Size = new Size(183, 33);
+            cmb_prdctModel.TabIndex = 35;
+            cmb_prdctModel.SelectedIndex = 0;
+            cmb_prdctModel.SelectedValueChanged += cmb_prdctModel_SelectedValueChanged;
+            // 
             // K1_load
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(955, 450);
+            Controls.Add(cmb_prdctModel);
+            Controls.Add(lbl_prd_model);
             Controls.Add(lbl_hdr_sw_version);
             Controls.Add(lbl_startinfo);
             Controls.Add(lbl_filepathvalue);
@@ -321,5 +348,7 @@
         private Label lbl_startinfo;
         private Label label2;
         private ComboBox cmb_stage;
+        private Label lbl_prd_model;
+        private ComboBox cmb_prdctModel;
     }
 }

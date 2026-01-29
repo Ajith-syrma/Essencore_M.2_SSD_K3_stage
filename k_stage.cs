@@ -89,7 +89,7 @@ namespace K1_Stages
         #endregion
 
         #region UI_components
-        public k_stage(string stage_name, string fg, string emp_id, string emp_name,string f_name)
+        public k_stage(string stage_name,string Prduct_model, string fg, string emp_id, string emp_name,string f_name)
         {
             InitializeComponent();
             this.MaximizeBox = false;
@@ -105,7 +105,7 @@ namespace K1_Stages
             //cmb_capacity.KeyDown += Txtempid_KeyDown;
             this.FormClosing += Form1_close;
             this.Shown += Form1_Shown;
-            k1_stage_test(stage_name, fg, emp_id, emp_name, f_name);
+            k1_stage_test(stage_name, Prduct_model, fg, emp_id, emp_name, f_name);
 
 
 
@@ -125,7 +125,7 @@ namespace K1_Stages
             System.Windows.Forms.Application.Exit();
         }
 
-        private void k1_stage_test(string stage_val,string fg_no,string employe_id,string employee_name, string f)
+        private void k1_stage_test(string stage_val,string Prduct_model, string fg_no,string employe_id,string employee_name, string f)
         {
 
             stage = stage_val;
@@ -147,8 +147,6 @@ namespace K1_Stages
             this.WindowState = FormWindowState.Normal;
             this.TopMost = true;
             //this.TopMost = false;
-
-
 
 
         }

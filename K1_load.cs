@@ -125,7 +125,7 @@ namespace K1_Stages
 
                         return true; // validation passed
                     }
-                    else if (Gentype == "Gen4x4")
+                    else if (App_Name == "SM2268XT2_MPTool.exe"  || App_Name== "MPTools.exe")
                     {
                         ssdmpFilePathG4 = App_LogPath;
                         ssdmpG4 = Path.Combine(ssdmpFilePathG4, ($"{fileNameg4}.txt"));
@@ -269,7 +269,7 @@ namespace K1_Stages
                 if (valid)
                 {
 
-                    k_stage k1form = new k_stage(stage, Prduct_model, fg, emp_id, emp_name, filepath);
+                    k_stage k1form = new k_stage(stage, Prduct_model, App_Name, fg, emp_id, emp_name, filepath);
                     k1form.Show();
                     this.Hide();
                 }

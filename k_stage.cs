@@ -89,7 +89,7 @@ namespace K1_Stages
         #endregion
 
         #region UI_components
-        public k_stage(string stage_name,string Prduct_model, string fg, string emp_id, string emp_name,string f_name)
+        public k_stage(string stage_name,string Prduct_model,string App_N, string fg, string emp_id, string emp_name,string f_name)
         {
             InitializeComponent();
             this.MaximizeBox = false;
@@ -105,7 +105,7 @@ namespace K1_Stages
             //cmb_capacity.KeyDown += Txtempid_KeyDown;
             this.FormClosing += Form1_close;
             this.Shown += Form1_Shown;
-            k1_stage_test(stage_name, Prduct_model, fg, emp_id, emp_name, f_name);
+            k1_stage_test(stage_name, Prduct_model, App_N, fg, emp_id, emp_name, f_name);
 
 
 
@@ -125,7 +125,7 @@ namespace K1_Stages
             System.Windows.Forms.Application.Exit();
         }
 
-        private void k1_stage_test(string stage_val,string Prduct_model, string fg_no,string employe_id,string employee_name, string f)
+        private void k1_stage_test(string stage_val,string Prduct_model,string Appl_Name, string fg_no,string employe_id,string employee_name, string f)
         {
 
             stage = stage_val;
@@ -141,7 +141,7 @@ namespace K1_Stages
             writestatusMessage("Start button clicked", "Application_start");
             
             Thread.Sleep(1000);
-            Spd_Automation(stage, capacity, Filename, emp_id, emp_name, modelname, Gentype);
+            Spd_Automation(stage, capacity, Filename, emp_id, emp_name, modelname, Gentype, Appl_Name);
             
             this.Show();
             this.WindowState = FormWindowState.Normal;
@@ -159,12 +159,12 @@ namespace K1_Stages
         #endregion
 
         #region modeltypehandlerK3
-        public string Spd_Automation(string stageName, string capacity, string Filepath, string emp_id, string emp_name, string model, string Gentype)
+        public string Spd_Automation(string stageName, string capacity, string Filepath, string emp_id, string emp_name, string model, string Gentype,string Applic_Name)
         {
             try
             {
                
-                if (Gentype != "Gen4x4")
+                if (Applic_Name == "SSDMP.exe")
                 {
                     // Initialize and start the SSDMP file monitor timer
                     fileMonitorTimer = new System.Windows.Forms.Timer
@@ -333,7 +333,7 @@ namespace K1_Stages
 
                     return "Completed";
                 }
-                else
+                else if (Applic_Name ==  "SM2268XT2_MPTool.exe")
                 {
                     // Initialize and start the SM2268XT2_MPTool file monitor timer
                     fileMonitorTimer = new System.Windows.Forms.Timer
@@ -431,6 +431,12 @@ namespace K1_Stages
 
                     }
                     return "Completed";
+                }
+                else 
+                {
+                    MessageBox.Show("Application name not matched -- Doesnot support this Applicaiton");
+                    writestatusMessage("Application name not matched", "App name error");
+                    return null;
                 }
 
             }
@@ -633,7 +639,7 @@ namespace K1_Stages
             var ser_len = serial.Length;
 
 
-            if (ser_len < 18 && serial.StartsWith("E"))
+            if ((ser_len ==14 || ser_len== 17) && (serial.StartsWith("ES") || (serial.StartsWith("EN"))))
             {
                 var stage_count = dbconnect.get_serial_dup(serial, model);
 
@@ -706,7 +712,7 @@ namespace K1_Stages
             else
             {
 
-                writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail -Serial Number not scanned", "Board status");
+                writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail -Serial Number not scanned Properly", "Board status");
 
                 popup.ShowDialogMessage($"Please scan the correct serial Number", Color.Red, Color.White, false);
                 return;

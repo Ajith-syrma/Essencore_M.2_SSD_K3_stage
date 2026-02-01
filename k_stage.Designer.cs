@@ -34,7 +34,11 @@
             pictureBox1 = new PictureBox();
             pic_status = new PictureBox();
             app_name_lbl = new Panel();
-            lbl_sw_version = new Label();
+            lblemp_id = new Label();
+            lbl_date = new Label();
+            lbldate = new Label();
+            lbl_id = new Label();
+            lblappver = new Label();
             lbl_hdr_sw_version = new Label();
             lbl_app_id = new Label();
             lbl_hdr_app_id = new Label();
@@ -45,12 +49,12 @@
             label5 = new Label();
             lbl_wo = new Label();
             label2 = new Label();
-            lbl_SN = new TextBox();
-            label1 = new Label();
+            txt_SN = new TextBox();
             txt_live_stat = new RichTextBox();
-            lbl_result_Click = new Label();
+            lbl_result = new Label();
             label3 = new Label();
             lbl_try = new Label();
+            lbl_pcbserial = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pic_status).BeginInit();
             app_name_lbl.SuspendLayout();
@@ -83,7 +87,7 @@
             // pictureBox1
             // 
             pictureBox1.Image = Properties.Resources.Essencore;
-            pictureBox1.Location = new Point(0, 2);
+            pictureBox1.Location = new Point(0, -2);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(968, 481);
             pictureBox1.TabIndex = 15;
@@ -105,30 +109,86 @@
             // app_name_lbl
             // 
             app_name_lbl.BackColor = Color.SteelBlue;
-            app_name_lbl.Controls.Add(lbl_sw_version);
+            app_name_lbl.Controls.Add(lblemp_id);
+            app_name_lbl.Controls.Add(lbl_date);
+            app_name_lbl.Controls.Add(lbldate);
+            app_name_lbl.Controls.Add(lbl_id);
+            app_name_lbl.Controls.Add(lblappver);
             app_name_lbl.Controls.Add(lbl_hdr_sw_version);
             app_name_lbl.Controls.Add(lbl_app_id);
             app_name_lbl.Controls.Add(lbl_hdr_app_id);
             app_name_lbl.Controls.Add(pictureBox3);
             app_name_lbl.Controls.Add(K1_STAGE);
             app_name_lbl.Controls.Add(pictureBox2);
-            app_name_lbl.Location = new Point(0, 5);
+            app_name_lbl.Location = new Point(0, 0);
             app_name_lbl.Name = "app_name_lbl";
-            app_name_lbl.Size = new Size(961, 79);
+            app_name_lbl.Size = new Size(961, 84);
             app_name_lbl.TabIndex = 19;
             // 
-            // lbl_sw_version
+            // lblemp_id
             // 
-            lbl_sw_version.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            lbl_sw_version.BackColor = Color.White;
-            lbl_sw_version.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
-            lbl_sw_version.ForeColor = Color.Navy;
-            lbl_sw_version.Location = new Point(683, 39);
-            lbl_sw_version.Name = "lbl_sw_version";
-            lbl_sw_version.Size = new Size(101, 39);
-            lbl_sw_version.TabIndex = 6;
-            lbl_sw_version.Text = "abc";
-            lbl_sw_version.TextAlign = ContentAlignment.MiddleCenter;
+            lblemp_id.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lblemp_id.BackColor = Color.White;
+            lblemp_id.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
+            lblemp_id.ForeColor = Color.Navy;
+            lblemp_id.Location = new Point(591, 40);
+            lblemp_id.Name = "lblemp_id";
+            lblemp_id.Size = new Size(101, 44);
+            lblemp_id.TabIndex = 11;
+            lblemp_id.Text = "abc";
+            lblemp_id.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // lbl_date
+            // 
+            lbl_date.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lbl_date.BackColor = Color.White;
+            lbl_date.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
+            lbl_date.ForeColor = Color.Navy;
+            lbl_date.Location = new Point(698, 38);
+            lbl_date.Name = "lbl_date";
+            lbl_date.Size = new Size(101, 44);
+            lbl_date.TabIndex = 10;
+            lbl_date.Text = "abc";
+            lbl_date.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // lbldate
+            // 
+            lbldate.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lbldate.BackColor = Color.Navy;
+            lbldate.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
+            lbldate.ForeColor = Color.White;
+            lbldate.Location = new Point(698, -1);
+            lbldate.Name = "lbldate";
+            lbldate.Size = new Size(101, 44);
+            lbldate.TabIndex = 9;
+            lbldate.Text = "Date";
+            lbldate.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // lbl_id
+            // 
+            lbl_id.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lbl_id.BackColor = Color.Navy;
+            lbl_id.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
+            lbl_id.ForeColor = Color.White;
+            lbl_id.Location = new Point(588, -2);
+            lbl_id.Name = "lbl_id";
+            lbl_id.Size = new Size(101, 44);
+            lbl_id.TabIndex = 7;
+            lbl_id.Text = "Emp ID";
+            lbl_id.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // lblappver
+            // 
+            lblappver.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lblappver.BackColor = Color.White;
+            lblappver.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
+            lblappver.ForeColor = Color.Navy;
+            lblappver.Location = new Point(287, 39);
+            lblappver.Name = "lblappver";
+            lblappver.Size = new Size(101, 44);
+            lblappver.TabIndex = 6;
+            lblappver.Text = "abc";
+            lblappver.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lbl_hdr_sw_version
             // 
@@ -136,9 +196,9 @@
             lbl_hdr_sw_version.BackColor = Color.Navy;
             lbl_hdr_sw_version.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold);
             lbl_hdr_sw_version.ForeColor = Color.White;
-            lbl_hdr_sw_version.Location = new Point(683, 0);
+            lbl_hdr_sw_version.Location = new Point(287, 0);
             lbl_hdr_sw_version.Name = "lbl_hdr_sw_version";
-            lbl_hdr_sw_version.Size = new Size(101, 39);
+            lbl_hdr_sw_version.Size = new Size(101, 44);
             lbl_hdr_sw_version.TabIndex = 5;
             lbl_hdr_sw_version.Text = "Version";
             lbl_hdr_sw_version.TextAlign = ContentAlignment.MiddleCenter;
@@ -151,7 +211,7 @@
             lbl_app_id.ForeColor = Color.Navy;
             lbl_app_id.Location = new Point(177, 38);
             lbl_app_id.Name = "lbl_app_id";
-            lbl_app_id.Size = new Size(101, 39);
+            lbl_app_id.Size = new Size(101, 44);
             lbl_app_id.TabIndex = 4;
             lbl_app_id.Text = "abc";
             lbl_app_id.TextAlign = ContentAlignment.MiddleCenter;
@@ -164,7 +224,7 @@
             lbl_hdr_app_id.ForeColor = Color.White;
             lbl_hdr_app_id.Location = new Point(177, -1);
             lbl_hdr_app_id.Name = "lbl_hdr_app_id";
-            lbl_hdr_app_id.Size = new Size(101, 39);
+            lbl_hdr_app_id.Size = new Size(101, 44);
             lbl_hdr_app_id.TabIndex = 3;
             lbl_hdr_app_id.Text = "App ID";
             lbl_hdr_app_id.TextAlign = ContentAlignment.MiddleCenter;
@@ -199,7 +259,6 @@
             pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox2.TabIndex = 0;
             pictureBox2.TabStop = false;
-            //pictureBox2.Click += pictureBox2_Click;
             // 
             // lbl_qty
             // 
@@ -207,7 +266,7 @@
             lbl_qty.BackColor = Color.Turquoise;
             lbl_qty.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lbl_qty.ForeColor = Color.Navy;
-            lbl_qty.Location = new Point(672, 96);
+            lbl_qty.Location = new Point(805, 94);
             lbl_qty.Name = "lbl_qty";
             lbl_qty.Size = new Size(46, 28);
             lbl_qty.TabIndex = 30;
@@ -219,7 +278,7 @@
             label5.BackColor = SystemColors.AppWorkspace;
             label5.Font = new Font("Times New Roman", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             label5.ForeColor = Color.Navy;
-            label5.Location = new Point(628, 101);
+            label5.Location = new Point(746, 101);
             label5.Name = "label5";
             label5.Size = new Size(38, 20);
             label5.TabIndex = 29;
@@ -243,30 +302,19 @@
             label2.BackColor = SystemColors.AppWorkspace;
             label2.Font = new Font("Times New Roman", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
             label2.ForeColor = Color.Navy;
-            label2.Location = new Point(49, 150);
+            label2.Location = new Point(12, 145);
             label2.Name = "label2";
             label2.Size = new Size(108, 23);
             label2.TabIndex = 27;
             label2.Text = "Work order";
             // 
-            // lbl_SN
+            // txt_SN
             // 
-            lbl_SN.Location = new Point(190, 101);
-            lbl_SN.Name = "lbl_SN";
-            lbl_SN.Size = new Size(227, 31);
-            lbl_SN.TabIndex = 26;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.BackColor = SystemColors.AppWorkspace;
-            label1.Font = new Font("Times New Roman", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label1.ForeColor = Color.Navy;
-            label1.Location = new Point(49, 101);
-            label1.Name = "label1";
-            label1.Size = new Size(107, 23);
-            label1.TabIndex = 25;
-            label1.Text = "SCAN PCB";
+            txt_SN.Location = new Point(190, 101);
+            txt_SN.Name = "txt_SN";
+            txt_SN.Size = new Size(227, 31);
+            txt_SN.TabIndex = 26;
+            txt_SN.KeyDown += Txt_SN_KeyDown;
             // 
             // txt_live_stat
             // 
@@ -278,15 +326,15 @@
             txt_live_stat.TabIndex = 24;
             txt_live_stat.Text = "";
             // 
-            // lbl_result_Click
+            // lbl_result
             // 
-            lbl_result_Click.BackColor = SystemColors.ActiveCaption;
-            lbl_result_Click.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lbl_result_Click.Location = new Point(492, 176);
-            lbl_result_Click.Name = "lbl_result_Click";
-            lbl_result_Click.Size = new Size(456, 274);
-            lbl_result_Click.TabIndex = 23;
-            lbl_result_Click.Text = "TEST STATUS";
+            lbl_result.BackColor = SystemColors.ActiveCaption;
+            lbl_result.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lbl_result.Location = new Point(493, 179);
+            lbl_result.Name = "lbl_result";
+            lbl_result.Size = new Size(456, 274);
+            lbl_result.TabIndex = 23;
+            lbl_result.Text = "TEST STATUS";
             // 
             // label3
             // 
@@ -294,7 +342,7 @@
             label3.BackColor = SystemColors.AppWorkspace;
             label3.Font = new Font("Times New Roman", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             label3.ForeColor = Color.Navy;
-            label3.Location = new Point(628, 136);
+            label3.Location = new Point(749, 143);
             label3.Name = "label3";
             label3.Size = new Size(35, 20);
             label3.TabIndex = 31;
@@ -306,11 +354,23 @@
             lbl_try.BackColor = Color.Turquoise;
             lbl_try.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lbl_try.ForeColor = Color.Navy;
-            lbl_try.Location = new Point(672, 136);
+            lbl_try.Location = new Point(819, 136);
             lbl_try.Name = "lbl_try";
             lbl_try.Size = new Size(32, 28);
             lbl_try.TabIndex = 32;
             lbl_try.Text = "\"\"";
+            // 
+            // lbl_pcbserial
+            // 
+            lbl_pcbserial.AutoSize = true;
+            lbl_pcbserial.BackColor = SystemColors.AppWorkspace;
+            lbl_pcbserial.Font = new Font("Times New Roman", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lbl_pcbserial.ForeColor = Color.Navy;
+            lbl_pcbserial.Location = new Point(12, 106);
+            lbl_pcbserial.Name = "lbl_pcbserial";
+            lbl_pcbserial.Size = new Size(146, 23);
+            lbl_pcbserial.TabIndex = 33;
+            lbl_pcbserial.Text = "SCAN Serial No";
             // 
             // k_stage
             // 
@@ -318,17 +378,17 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Snow;
             ClientSize = new Size(961, 462);
+            Controls.Add(app_name_lbl);
+            Controls.Add(lbl_pcbserial);
             Controls.Add(lbl_try);
             Controls.Add(label3);
             Controls.Add(lbl_qty);
             Controls.Add(label5);
             Controls.Add(lbl_wo);
             Controls.Add(label2);
-            Controls.Add(lbl_SN);
-            Controls.Add(label1);
+            Controls.Add(txt_SN);
             Controls.Add(txt_live_stat);
-            Controls.Add(lbl_result_Click);
-            Controls.Add(app_name_lbl);
+            Controls.Add(lbl_result);
             Controls.Add(pic_status);
             Controls.Add(lbl_startinfo);
             Controls.Add(lbl_filepathvalue);
@@ -344,6 +404,11 @@
             ResumeLayout(false);
             PerformLayout();
         }
+
+        //private void Txt_SN_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         private void Btn_exit_Click(object sender, EventArgs e)
         {
@@ -361,17 +426,24 @@
         private Label lbl_hdr_app_id;
         private PictureBox pictureBox3;
         private Label lbl_app_id;
-        private Label lbl_sw_version;
+        private Label lblappver;
         private Label lbl_hdr_sw_version;
         private Label lbl_qty;
         private Label label5;
         private Label lbl_wo;
         private Label label2;
-        private TextBox lbl_SN;
+        private TextBox txt_SN;
         private Label label1;
         private RichTextBox txt_live_stat;
-        private Label lbl_result_Click;
+        private Label lbl_result;
         private Label label3;
         private Label lbl_try;
+        private Label lbl_pcbserial;
+        private Label lblemp_id;
+        private Label lbl_date;
+        private Label lbldate;
+        //private Label lblemp_id;
+        private Label lbl_id;
+        //private Label lblemp_id;
     }
 }

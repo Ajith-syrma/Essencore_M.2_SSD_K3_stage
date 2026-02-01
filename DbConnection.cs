@@ -287,6 +287,8 @@ namespace K1_Stages
 
 
 
+
+
         //public List<BarcodeDetails> GetBarcodeDetails(int labelid)
         //{
         //    var list = new List<BarcodeDetails>();

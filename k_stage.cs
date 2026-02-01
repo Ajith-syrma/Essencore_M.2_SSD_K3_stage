@@ -5,19 +5,23 @@ using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
 using K1_Stages;
-using Microsoft.Office.Interop.Excel;
+//using Microsoft.Office.Interop.Excel;
 using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
+using System.Drawing;
 using System.IO;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 using Application = FlaUI.Core.Application;
-using Excel = Microsoft.Office.Interop.Excel;
+//using Excel = Microsoft.Office.Interop.Excel;
 using Point = System.Drawing.Point;
 namespace K1_Stages
 {
@@ -26,12 +30,18 @@ namespace K1_Stages
         #region variable decl,dll,appconf
 
         DbConnection dbConnection = new DbConnection();
+        SqlConnection con = new SqlConnection(ConfigurationManager.AppSettings["conn"].ToString());
+        SqlConnection con1 = new SqlConnection(ConfigurationManager.AppSettings["conn1"].ToString());
+        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["conn2"].ToString());
+        public string CONFIG_NETWORKPATH = ConfigurationManager.AppSettings["NETWORKPATH"];
+        private string CONFIG_ISONLINE = ConfigurationManager.AppSettings["ISONLINE"];
 
         [DllImport("user32.dll")]
         private static extern bool SetProcessDPIAware();
         [DllImport("user32.dll")]
 
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private StringBuilder barcodeData = new StringBuilder();
         private const int SW_MINIMIZE = 6;
         private const int SW_MAXIMIZE = 3;
         public string board_status = "";
@@ -47,6 +57,18 @@ namespace K1_Stages
         private string Health_stat = null;
         private int Health_value = 0;
 
+       
+
+        string errordesc = "";
+        public string[] nextidinfo = { "", "" };
+        public string[] reworkidinfo = { "24", "Rework" };
+        public string[] infosfromprint = { "", "", "" }; // FG, Sno, WO
+        public string[] infosfromboard = { "", "" };// WO,RW
+        public string yearinfofromprint = "";
+        public bool boardonline = false;
+        public bool boardfail = true;
+        public string[] infologindetails = { "", "" };
+
 
         // Timers
         private System.Windows.Forms.Timer monitorTimer;      // FlaUI UI monitor timer
@@ -57,11 +79,8 @@ namespace K1_Stages
         
 
         // SSDMP.txt monitoring
-        private readonly string ssdmpFilePathG3 = ConfigurationManager.AppSettings["File_Path1"];
-        private readonly string ssdmpFilePathG4 = ConfigurationManager.AppSettings["File_Path2"];
-        private readonly string Logsbkppath = ConfigurationManager.AppSettings["BackupfilePath"];
-        public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
-        public string G4appPath = ConfigurationManager.AppSettings["Executable_Path2"];
+        //public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
+        //public string G4appPath = ConfigurationManager.AppSettings["Executable_Path2"];
 
         public string fileNameg4 = DateTime.Now.ToString("yyyyMMdd");
 
@@ -80,6 +99,8 @@ namespace K1_Stages
 
         public string Gentype = "";
         private string Filename;
+        private string Log_filePath;
+        private string App_Path;
 
         private bool isHandlingChange = false;
         bool suppressCapacityEvent = false;
@@ -89,13 +110,17 @@ namespace K1_Stages
         #endregion
 
         #region UI_components
-        public k_stage(string stage_name,string Prduct_model,string App_N, string fg, string emp_id, string emp_name,string f_name)
+        public k_stage(string stage_name, string Prduct_model, string App_N, string App_Pth,
+                        string fg, string emp_id, string emp_name, string f_name, string App_logpath)
         {
             InitializeComponent();
+            Log_filePath = App_logpath;
+            App_Path = App_Pth;
             this.MaximizeBox = false;
             lbl_filepathvalue.Enabled = false;
             lbl_startinfo.Enabled = false;
             this.MinimizeBox = false;
+            lbldate.Text = DateOnly.FromDateTime(DateTime.Now).ToString();
 
             //txt_empid.KeyDown += Txtempid_KeyDown;
             //txt_emp_name.KeyDown += Txtempid_KeyDown;
@@ -110,8 +135,41 @@ namespace K1_Stages
 
 
         }
-        private void Form1_Shown(object sender, EventArgs e)
+
+        private void Txt_SN_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Enter)
+            {
+                //// Process the barcode
+                ////  ProcessBarcode(barcodeData.ToString());
+                //ProcessBarcode(txtPCBSerialNo.Text);
+
+                //barcodeData.Clear();
+            }
+            else
+            {
+                // Append the keystroke to the barcode data
+                barcodeData.Append((char)e.KeyValue);
+            }
+        }
+
+
+
+        private void move_Formto_left()
+        {
+            StartPosition = FormStartPosition.Manual;
+
+            Screen screen = Screen.FromControl(this);
+            Location = new Point(
+                screen.WorkingArea.Left,
+                screen.WorkingArea.Top + (screen.WorkingArea.Height - Height) / 3
+            );
+
+
+        }
+        private void move_Formto_right()
+        {
+
             StartPosition = FormStartPosition.Manual;
 
             Screen screen = Screen.FromControl(this);
@@ -119,13 +177,22 @@ namespace K1_Stages
                 screen.WorkingArea.Right - Width,
                 screen.WorkingArea.Top
             );
+
         }
+
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            move_Formto_left();
+        }
+
+
         private void Form1_close(object sender, EventArgs e)
         {
             System.Windows.Forms.Application.Exit();
         }
 
-        private void k1_stage_test(string stage_val,string Prduct_model,string Appl_Name, string fg_no,string employe_id,string employee_name, string f)
+        private void k1_stage_test(string stage_val,string Prduct_model,
+                                        string Appl_Name, string fg_no,string employe_id,string employee_name, string f)
         {
 
             stage = stage_val;
@@ -137,7 +204,8 @@ namespace K1_Stages
 
             string modelname = dbConnection.getmodel(capacity);
             Gentype = dbConnection.getgentype(capacity);
-            ssdmpFilePath = Gentype == "Gen4x4" ? ssdmpG4 : ssdmpFilePathG3;
+            //ssdmpFilePath = Gentype == "Gen4x4" ? ssdmpG4 : ssdmpFilePathG3;
+            ssdmpFilePath = Log_filePath;
             writestatusMessage("Start button clicked", "Application_start");
             
             Thread.Sleep(1000);
@@ -159,7 +227,9 @@ namespace K1_Stages
         #endregion
 
         #region modeltypehandlerK3
-        public string Spd_Automation(string stageName, string capacity, string Filepath, string emp_id, string emp_name, string model, string Gentype,string Applic_Name)
+        public string Spd_Automation(string stageName, string capacity,
+                                     string Filepath, string emp_id, 
+                                     string emp_name, string model, string Gentype,string Applic_Name)
         {
             try
             {
@@ -173,8 +243,8 @@ namespace K1_Stages
                     };
                     fileMonitorTimer.Tick += FileMonitorTimer_Tick;
                     fileMonitorTimer.Start();
-                    StartAppWithCleanup(G3appPath);
-                    var app = Application.Launch(G3appPath);
+                    StartAppWithCleanup(App_Path);
+                    var app = Application.Launch(App_Path);
                     app.WaitWhileMainHandleIsMissing();
 
                     //UI Automation SSDMP Tool 
@@ -342,8 +412,8 @@ namespace K1_Stages
                     };
                     fileMonitorTimer.Tick += FileMonitorTimer_Tick;
                     fileMonitorTimer.Start();
-                    StartAppWithCleanup(G4appPath);
-                    var app = Application.Launch(G4appPath);
+                    StartAppWithCleanup(App_Path);
+                    var app = Application.Launch(App_Path);
                     app.WaitWhileMainHandleIsMissing();
 
                     //UI Automation for SM2268XT2_MPTool 
@@ -434,9 +504,19 @@ namespace K1_Stages
                 }
                 else 
                 {
-                    MessageBox.Show("Application name not matched -- Doesnot support this Applicaiton");
-                    writestatusMessage("Application name not matched", "App name error");
+                    // This is for SSD_SATA Mp_Tools Need to check UI Automation but still can lauch the App
+                    // Initialize and start the SSDMP file monitor timer
+                    fileMonitorTimer = new System.Windows.Forms.Timer
+                    {
+                        Interval = 5000 // Check every 5 seconds
+                    };
+                    fileMonitorTimer.Tick += FileMonitorTimer_Tick;
+                    fileMonitorTimer.Start();
+                    StartAppWithCleanup(App_Path);
+                    var app = Application.Launch(App_Path);
+                    app.WaitWhileMainHandleIsMissing();
                     return null;
+
                 }
 
             }
@@ -1239,6 +1319,246 @@ namespace K1_Stages
         {
 
         }
+
+
+        #region SFCS_DATA
+        public bool Check_Curr_Stage(string serialno, string app_id, string stage, bool boardonline)
+        {
+            try
+            {
+                if (boardonline)
+                {
+                    con.Close();
+                    using (SqlCommand cmd = new SqlCommand(
+                        "SELECT * FROM PCBA_NextStage(NOLOCK) WHERE PCBA_Id = '" + serialno + "'", con))
+                    {
+                        if (con.State == ConnectionState.Closed)
+                            con.Open();
+
+                        using (SqlDataReader sdr = cmd.ExecuteReader())
+                        {
+                            if (sdr.Read())
+                            {
+                                infosfromboard[0] = sdr["Work_order_no"].ToString();
+                                infosfromboard[1] = sdr["Rework_count"].ToString();
+
+                                //Fill_Response_Data("Board Waiting ID : " + sdr["Next_Stage_id"].ToString());
+                                //Fill_Response_Data("Board Workorder : " + infosfromboard[0]);
+                                //Fill_Response_Data("Board RW : " + infosfromboard[1]);
+
+                                if (sdr["Next_Stage_id"].ToString() == app_id)
+                                {
+                                    con.Close();
+                                    return true;
+                                }
+                                else
+                                {
+                                    errordesc = "Stage Mismatch for this PCB : " + serialno + ".\n" +
+                                                "Expected is : " + sdr["Next_Stage_id"] + "|" + sdr["Next_Stage_name"] + ".\n" +
+                                                "Actual is : " + app_id + "|" + stage + ".";
+                                    con.Close();
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                errordesc = "No Data for this PCB : " + serialno + " in SFCS Master Table.";
+                                con.Close();
+                                return false;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                errordesc = "Exception. " + ex.Message;
+                return false;
+            }
+        }
+
+
+        private void SQL_Upload(string Sno, bool boardfail)
+        {
+
+            try
+            {
+                con.Close();
+
+                SqlCommand cmd = new SqlCommand(
+                    "INSERT INTO DASHBOARD_ESSENCOREDATAS VALUES (" +
+                    "'" + lbl_app_id.Text + "'," +
+                    "'" + K1_STAGE.Text + "'," +
+                    "'" + infosfromboard[0] + "'," +
+                    "'" + Sno + "'," +
+                    "'" + Sno + "'," +
+                    "'" + (boardfail ? "FAIL" : "PASS") + "'," +
+                    "'" + errordesc + "'," +
+                    "'" + infosfromboard[1] + "'," +
+                    "CONCAT(FORMAT(CURRENT_TIMESTAMP,'HH'),'-',FORMAT(DATEADD(HOUR,1,CURRENT_TIMESTAMP),'HH'))," +
+                    "CASE " +
+                    "WHEN (FORMAT(CURRENT_TIMESTAMP,'HH:mm:ss') >= CONVERT(datetime,'08:00:00',103)) AND (FORMAT(CURRENT_TIMESTAMP,'HH:mm:ss') < CONVERT(datetime,'16:00:00',103)) THEN 'SHIFT-A' " +
+                    "WHEN (FORMAT(CURRENT_TIMESTAMP,'HH:mm:ss') >= CONVERT(datetime,'16:00:00',103)) AND (FORMAT(CURRENT_TIMESTAMP,'HH:mm:ss') < CONVERT(datetime,'23:59:59',103)) THEN 'SHIFT-B' " +
+                    "ELSE 'SHIFT-C' END," +
+                    "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy')," +
+                    "'" + lblemp_id.Text + "'," +
+                    "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss')," +
+                    "HOST_NAME(),'','','')",
+                    con);
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                cmd.ExecuteNonQuery();
+                con.Close();
+                Fill_Response_Data("SQL Report Success. - SFCS Dashboard");
+            }
+            catch (Exception ex)
+            {
+                Update_Error_in_Server("Exception", "ERR-SQL-02", ex.Message.ToString(),
+                    "SFCS Dashboard", "PCBA:" + Sno + ",Workorder:" + lblemp_id.Text + ",CustomerNo:" + Sno + ".");
+                lbl_result.Text += "SFCS Dashboard Failed.";
+                lbl_result.BackColor = Color.Red;
+                lbl_result.ForeColor = Color.Yellow;
+                Fill_Response_Data("SQL Report Failed. - SFCS Dashboard");
+            }
+
+            for (int tryupdate = 1; tryupdate <= 3; tryupdate++)
+            {
+                try
+                {
+                    con.Close();
+
+                    SqlCommand cmd = new SqlCommand(
+                        "UPDATE PCBA_NextStage SET " +
+                        "Next_Stage_Id = '" + (boardfail ? reworkidinfo[0] : nextidinfo[0]) + "', " +
+                        "Next_Stage_Name = '" + (boardfail ? reworkidinfo[1] : nextidinfo[1]) + "', " +
+                        "Previous_Stage = '" + K1_STAGE.Text + "', " +
+                        "Update_timestamp = FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.ffff'), " +
+                        "Update_Machine_id = HOST_NAME(), " +
+                        "Update_Emp_id = '" + lblemp_id.Text + "' " +
+                        "WHERE PCBA_Id = '" + Sno + "'",
+                        con);
+
+                    if (con.State == ConnectionState.Closed)
+                        con.Open();
+
+                    cmd.ExecuteNonQuery();
+                    con.Close();
+                    Fill_Response_Data("Next Stage : " + (boardfail ? reworkidinfo[1] : nextidinfo[1]));
+                    Fill_Response_Data("SFCS Next Stage Update Success.");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Update_Error_in_Server("Exception", "ERR-SQL-03", ex.Message.ToString(),
+                        "SFCS Nextstage Failed", "PCBA:" + Sno + ",Workorder:" + infosfromboard[0] + ",CustomerNo:" + Sno + ".");
+                    lbl_result.Text += "SFCS Nextstage Failed.";
+                    lbl_result.BackColor = Color.Red;
+                    lbl_result.ForeColor = Color.Yellow;
+                    Fill_Response_Data("SFCS Next Stage Update Failed.");
+                }
+            }
+
+            try
+            {
+                con.Close();
+
+                SqlCommand cmd = new SqlCommand("INSERT INTO FCT VALUES('CHN1','" + K1_STAGE.Text + "','" + Sno + "','" + (boardfail ? "FAIL" : "PASS") + "','" + errordesc + "',FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.ffff'),'" + lblemp_id.Text + "',HOST_NAME(),'" + infosfromboard[1] + "','" + infosfromboard[0] + "','')", con);
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+                cmd.ExecuteNonQuery();
+                con.Close();
+                Fill_Response_Data("SFCS FCT Success.");
+            }
+            catch (Exception ex)
+            {
+                Update_Error_in_Server("Exception", "ERR-SQL-04", ex.Message.ToString(),
+                    "SFCS FCT Failed", "PCBA:" + Sno + ",Workorder:" + infosfromboard[0] + ",CustomerNo:" + Sno + ".");
+                lbl_result.Text += "SFCS FCT Failed.";
+                lbl_result.BackColor = Color.Red;
+                lbl_result.ForeColor = Color.Yellow;
+                Fill_Response_Data("SFCS FCT Update Failed.");
+            }
+
+
+
+            try
+            {
+                string datefolder = DateTime.Now.ToString("ddMMyyyy");
+
+                if (!Directory.Exists(CONFIG_NETWORKPATH))
+                {
+                    Update_Error_in_Server("Error", "ERR-UPL-01",
+                        "Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.",
+                        "SQL Upload", "");
+                    //  MessageBox.Show("Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.");
+                    //  lbl_result.Text = "Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.";
+                    //  lbl_result.BackColor = Color.Red;
+                    //  lbl_result.ForeColor = Color.Yellow;
+                    this.Refresh();
+                    return;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Update_Error_in_Server("Error", "ERR-UPL-02",
+                    "Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.",
+                    "SQL Upload-Write Failure Network Path", "");
+                MessageBox.Show("Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.");
+                lbl_result.Text = "Network Path [" + CONFIG_NETWORKPATH + "] is not Accessible. Please Check with IT.";
+                lbl_result.BackColor = Color.Red;
+                lbl_result.ForeColor = Color.Yellow;
+                this.Refresh();
+                return;
+            }
+        }
+
+        private void Update_Error_in_Server(string errortype, string errorcode, string errordesc, string errorloc, string errorremarks)
+        {
+            string inqry = string.Empty;
+            try
+            {
+                con.Close();
+
+                inqry = "INSERT INTO EXCEPTIONLOGS_MEMORY VALUES ('" +
+                        errortype + "','" +
+                        lbl_app_id.Text + "','" +
+                        K1_STAGE.Text + "','" +
+                        lblappver.Text + "','" +
+                        errorcode + "','" +
+                        errordesc.Replace("'", "@") + "','" +
+                        errorloc.Replace("'", "@") + "','" +
+                        errorremarks.Replace("'", "@") + "'," +
+                        "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy')," +
+                        "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.fff')," +
+                        "HOST_NAME(),'" + lblemp_id.Text + "','','')";
+
+                using (SqlCommand cmd = new SqlCommand(inqry, con))
+                {
+                    if (con.State == ConnectionState.Closed)
+                        con.Open();
+
+                    cmd.ExecuteNonQuery();
+                    con.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Fill_Response_Data("Exception in Updating Error in Server.");
+                Fill_Response_Data(ex.Message.ToString());
+            }
+
+        }
+
+
+        #endregion
     }
 }
 

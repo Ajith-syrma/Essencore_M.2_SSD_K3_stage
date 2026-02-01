@@ -269,7 +269,7 @@ namespace K1_Stages
                 if (valid)
                 {
 
-                    k_stage k1form = new k_stage(stage, Prduct_model, App_Name, fg, emp_id, emp_name, filepath);
+                    k_stage k1form = new k_stage(stage, Prduct_model, App_Name, App_Path, fg, emp_id, emp_name, filepath,App_LogPath);
                     k1form.Show();
                     this.Hide();
                 }

@@ -348,6 +348,26 @@ namespace K1_Stages
 
         //}
 
+
+        public string getpcbserialno(string serial)
+        {
+            try
+            {
+                cmd = new SqlCommand("pro_get_pcbserialno", con1);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@serial", serial);
+                con.Open();
+                var reader = cmd.ExecuteScalar();
+                con.Close();
+                return reader.ToString();
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+                MessageBox.Show("Error : " + ex.Message.ToString());
+            }
+        }
+
         public List<string> getcapacity(string stageval,string product_Model)
         {
             var listcapacity = new List<string>();

@@ -43,7 +43,7 @@
             lbl_app_id = new Label();
             lbl_hdr_app_id = new Label();
             pictureBox3 = new PictureBox();
-            K1_STAGE = new Label();
+            lblstagename = new Label();
             pictureBox2 = new PictureBox();
             lbl_qty = new Label();
             label5 = new Label();
@@ -55,6 +55,7 @@
             label3 = new Label();
             lbl_try = new Label();
             lbl_pcbserial = new Label();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pic_status).BeginInit();
             app_name_lbl.SuspendLayout();
@@ -109,6 +110,7 @@
             // app_name_lbl
             // 
             app_name_lbl.BackColor = Color.SteelBlue;
+            app_name_lbl.Controls.Add(label1);
             app_name_lbl.Controls.Add(lblemp_id);
             app_name_lbl.Controls.Add(lbl_date);
             app_name_lbl.Controls.Add(lbldate);
@@ -118,8 +120,8 @@
             app_name_lbl.Controls.Add(lbl_app_id);
             app_name_lbl.Controls.Add(lbl_hdr_app_id);
             app_name_lbl.Controls.Add(pictureBox3);
-            app_name_lbl.Controls.Add(K1_STAGE);
             app_name_lbl.Controls.Add(pictureBox2);
+            app_name_lbl.Controls.Add(lblstagename);
             app_name_lbl.Location = new Point(0, 0);
             app_name_lbl.Name = "app_name_lbl";
             app_name_lbl.Size = new Size(961, 84);
@@ -239,16 +241,16 @@
             pictureBox3.TabIndex = 2;
             pictureBox3.TabStop = false;
             // 
-            // K1_STAGE
+            // lblstagename
             // 
-            K1_STAGE.AutoSize = true;
-            K1_STAGE.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
-            K1_STAGE.ForeColor = Color.White;
-            K1_STAGE.Location = new Point(397, -1);
-            K1_STAGE.Name = "K1_STAGE";
-            K1_STAGE.Size = new Size(196, 68);
-            K1_STAGE.TabIndex = 1;
-            K1_STAGE.Text = "K1_STAGE";
+            lblstagename.AutoSize = true;
+            lblstagename.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
+            lblstagename.ForeColor = Color.White;
+            lblstagename.Location = new Point(389, 8);
+            lblstagename.Name = "lblstagename";
+            lblstagename.Size = new Size(75, 68);
+            lblstagename.TabIndex = 1;
+            lblstagename.Text = "K3";
             // 
             // pictureBox2
             // 
@@ -372,6 +374,16 @@
             lbl_pcbserial.TabIndex = 33;
             lbl_pcbserial.Text = "SCAN Serial No";
             // 
+            // label1
+            // 
+            label1.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
+            label1.ForeColor = Color.White;
+            label1.Location = new Point(446, 8);
+            label1.Name = "label1";
+            label1.Size = new Size(141, 68);
+            label1.TabIndex = 12;
+            label1.Text = "STAGE";
+            // 
             // k_stage
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
@@ -422,7 +434,7 @@
         private PictureBox pic_status;
         private Panel app_name_lbl;
         private PictureBox pictureBox2;
-        private Label K1_STAGE;
+        private Label lblstagename;
         private Label lbl_hdr_app_id;
         private PictureBox pictureBox3;
         private Label lbl_app_id;

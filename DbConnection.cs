@@ -34,7 +34,7 @@ namespace K1_Stages
                     cmd.Parameters.AddWithValue("@capacity", capacity);
                     cmd.Parameters.AddWithValue("@station", station);
                     cmd.Parameters.AddWithValue("@test_time", testTime);
-                    cmd.Parameters.AddWithValue("@status", status); 
+                    cmd.Parameters.AddWithValue("@status", status);
 
                     con1.Open();
                     object reader = cmd.ExecuteScalar();
@@ -108,9 +108,9 @@ namespace K1_Stages
                 cmd = new SqlCommand("pro_get_serial_dup", con1);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@serial_no", serial);
-               // cmd.Parameters.AddWithValue("@model", model);
-               //cmd.Parameters.AddWithValue("@result", result);
-               //cmd.Parameters.AddWithValue("@Work_Orderno", Work_Orderno);
+                // cmd.Parameters.AddWithValue("@model", model);
+                //cmd.Parameters.AddWithValue("@result", result);
+                //cmd.Parameters.AddWithValue("@Work_Orderno", Work_Orderno);
                 con1.Open();
                 var reader = cmd.ExecuteScalar();
                 con1.Close();
@@ -148,9 +148,9 @@ namespace K1_Stages
 
         public string getmodel(string fg)
         {
-            try 
+            try
             {
-                SqlCommand cmd = new SqlCommand("pro_getmodel_name", con1); 
+                SqlCommand cmd = new SqlCommand("pro_getmodel_name", con1);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@fg", fg);
                 con1.Open();
@@ -161,7 +161,7 @@ namespace K1_Stages
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error : " + ex.Message); 
+                MessageBox.Show("Error : " + ex.Message);
                 return string.Empty;
             }
 
@@ -211,13 +211,13 @@ namespace K1_Stages
                 return list;
             }
             catch (Exception ex)
-            {              
+            {
                 MessageBox.Show("Error", "Database not connected");
                 return list;
             }
         }
 
-        public List<appFgdetails> get_app_Name(string fg_name,string stage_name)
+        public List<appFgdetails> get_app_Name(string fg_name, string stage_name)
         {
             try
             {
@@ -246,8 +246,8 @@ namespace K1_Stages
                 MessageBox.Show("Error", "Database not connected");
                 return new List<appFgdetails>();
             }
-        }   
-          
+        }
+
         public void uploadresult(List<QcDataRecord> records)
         {
             try
@@ -368,16 +368,16 @@ namespace K1_Stages
             }
         }
 
-        public List<string> getcapacity(string stageval,string product_Model)
+        public List<string> getcapacity(string stageval, string product_Model)
         {
             var listcapacity = new List<string>();
             try
             {
-                
+
                 cmd = new SqlCommand("pro_get_capacity_details", Essencore_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@stage", stageval);
-                cmd.Parameters.AddWithValue("@Product_Type", stageval);
+                cmd.Parameters.AddWithValue("@Product_Type", product_Model);
                 adapter = new SqlDataAdapter(cmd);
                 dt = new DataTable();
                 adapter.Fill(dt);
@@ -397,18 +397,18 @@ namespace K1_Stages
             }
         }
 
-        public string GetFilePathdetail(string stage,string capacity)
+        public string GetFilePathdetail(string stage, string capacity)
         {
 
             try
             {
-                cmd = new SqlCommand("pro_getfilepath_k_stages", con);
+                cmd = new SqlCommand("pro_getfilepath_k_stages", Essencore_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@stage", stage);
                 cmd.Parameters.AddWithValue("@Fg_Name", capacity);
-                con.Open();
+                Essencore_db.Open();
                 var reader = cmd.ExecuteScalar();
-                con.Close();
+                Essencore_db.Close();
                 return reader.ToString();
             }
             catch (Exception ex)

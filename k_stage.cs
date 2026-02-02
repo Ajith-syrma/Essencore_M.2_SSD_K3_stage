@@ -59,7 +59,7 @@ namespace K1_Stages
         private string Health_stat = null;
         private int Health_value = 0;
 
-       
+
 
         string errordesc = "";
         public string[] nextidinfo = { "", "" };
@@ -78,7 +78,7 @@ namespace K1_Stages
 
         // FlaUI Window reference
         private FlaUI.Core.AutomationElements.Window mainWindow;
-        
+
 
         // SSDMP.txt monitoring
         //public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
@@ -102,7 +102,7 @@ namespace K1_Stages
         public string Gentype = "";
         private string Filename;
         public string Log_filePath;
-        public string product_Model;   
+        public string product_Model;
         private string App_Name;
         private string App_Path;
         private string Fg;
@@ -126,7 +126,7 @@ namespace K1_Stages
             Fg = fg;
             //Emp_id = emp_id;
             //Emp_name = emp_name;
-            Firmware_Name= f_name;
+            Firmware_Name = f_name;
             Log_filePath = App_logpath;
 
 
@@ -144,8 +144,13 @@ namespace K1_Stages
             //cmb_capacity.KeyDown += Txtempid_KeyDown;
             this.FormClosing += Form1_close;
             this.Shown += Form1_Shown;
-            k1_stage_test(stage_name, Prduct_model, App_N, fg, emp_id, emp_name, f_name);
 
+            k1_stage_test(stage_name, Prduct_model, App_N, fg, emp_id, emp_name, f_name);
+            this.Show();
+            this.TopMost = true;
+            this.Activate();
+            this.BringToFront();
+            this.TopMost = true;
 
 
         }
@@ -171,18 +176,19 @@ namespace K1_Stages
                 }
 
 
-                if (Check_Curr_Stage(scannedData, lbl_app_id.Text, lblstagename.Text, boardonline))
-                {
-                    move_Formto_right();
-                    MessageBox.Show("Please scan the serial Number on the OUT0 of the MP Tool");
-                }
-                else
-                {
-                    move_Formto_left();
-                    txt_SN.Clear();
-                    MessageBox.Show("Please scan the Next serial Number on the IN0 of the MP Tool");
 
-                }
+                //if (Check_Curr_Stage(scannedData, lbl_app_id.Text, lblstagename.Text, boardonline))
+                //{
+                move_Formto_right();
+                MessageBox.Show("Please scan the serial Number on the OUT0 of the MP Tool");
+                //}
+                //else
+                //{
+                //    move_Formto_left();
+                //    txt_SN.Clear();
+                //    MessageBox.Show("Please scan the Next serial Number on the IN0 of the MP Tool");
+
+                //}
             }
             else
             {
@@ -229,8 +235,8 @@ namespace K1_Stages
             System.Windows.Forms.Application.Exit();
         }
 
-        private void k1_stage_test(string stage_val,string Prduct_model,
-                                        string Appl_Name, string fg_no,string employe_id,string employee_name, string f)
+        private void k1_stage_test(string stage_val, string Prduct_model,
+                                        string Appl_Name, string fg_no, string employe_id, string employee_name, string f)
         {
 
             stage = stage_val;
@@ -245,10 +251,10 @@ namespace K1_Stages
             //ssdmpFilePath = Gentype == "Gen4x4" ? ssdmpG4 : ssdmpFilePathG3;
             ssdmpFilePath = Log_filePath;
             writestatusMessage("Start button clicked", "Application_start");
-            
+
             Thread.Sleep(1000);
             Spd_Automation(stage, capacity, Filename, emp_id, emp_name, modelname, Gentype, Appl_Name);
-            
+
             this.Show();
             this.WindowState = FormWindowState.Normal;
             this.TopMost = true;
@@ -266,12 +272,12 @@ namespace K1_Stages
 
         #region modeltypehandlerK3
         public string Spd_Automation(string stageName, string capacity,
-                                     string Filepath, string emp_id, 
-                                     string emp_name, string model, string Gentype,string Applic_Name)
+                                     string Filepath, string emp_id,
+                                     string emp_name, string model, string Gentype, string Applic_Name)
         {
             try
             {
-               
+
                 if (Applic_Name == "SSDMP.exe")
                 {
                     // Initialize and start the SSDMP file monitor timer
@@ -441,7 +447,7 @@ namespace K1_Stages
 
                     return "Completed";
                 }
-                else if (Applic_Name ==  "SM2268XT2_MPTool.exe")
+                else if (Applic_Name == "SM2268XT2_MPTool.exe")
                 {
                     // Initialize and start the SM2268XT2_MPTool file monitor timer
                     fileMonitorTimer = new System.Windows.Forms.Timer
@@ -540,7 +546,7 @@ namespace K1_Stages
                     }
                     return "Completed";
                 }
-                else 
+                else
                 {
                     // This is for SSD_SATA Mp_Tools Need to check UI Automation but still can lauch the App
                     // Initialize and start the SSDMP file monitor timer
@@ -623,7 +629,7 @@ namespace K1_Stages
                         {
                             lastHash = Currenthash;
 
-                            EvaluateLastValidDUT(ssdmpFilePath, emp_id, emp_name, Gentype, capacity, stage,App_Name,App_Path,Firmware_Name);
+                            EvaluateLastValidDUT(ssdmpFilePath, emp_id, emp_name, Gentype, capacity, stage, App_Name, App_Path, Firmware_Name, this);
 
                         }
                         else
@@ -668,8 +674,8 @@ namespace K1_Stages
 
 
         public static void EvaluateLastValidDUT(string filePath, string emp_id, string emp_name,
-                                              string Gtype, string fgno,string stage_N,string app_name ,string app_path,
-                                              string firmware_name)
+                                              string Gtype, string fgno, string stage_N, string app_name, string app_path,
+                                              string firmware_name, k_stage currentStage)
         {
             bool boardfail = true;
             string status = string.Empty;
@@ -759,7 +765,7 @@ namespace K1_Stages
             var ser_len = serial.Length;
 
 
-            if ((ser_len ==14 || ser_len== 17) && (serial.StartsWith("ES") || (serial.StartsWith("EN"))))
+            if ((ser_len == 14 || ser_len == 17) && (serial.StartsWith("ES") || (serial.StartsWith("EN"))))
             {
                 var stage_count = dbconnect.get_serial_dup(serial, model);
 
@@ -789,9 +795,9 @@ namespace K1_Stages
                     if (status.Equals("Pass", StringComparison.OrdinalIgnoreCase))
                     {
 
-                        var qc = new k_stage(stage_N, Gtype,app_name,app_path,fgno,emp_id,emp_name, filePath, firmware_name);
+                        //var qc = new k_stage(stage_N, Gtype,app_name,app_path,fgno,emp_id,emp_name,firmware_name, filePath);
                         writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is Pass in K3 and moved for Qc", "Board status");
-                        qc.qcstage_validation(serial, capacity, emp_id, emp_name);
+                        currentStage.qcstage_validation(serial, capacity, emp_id, emp_name);
 
                         return;
                     }
@@ -799,10 +805,14 @@ namespace K1_Stages
                     {
                         popup.ShowDialogMessage($"{serial} -- {status} at K3", displayColor, Color.White, false);
                         writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail in K3", "Board status");
-                        boardfail = true;
 
-                        var instance = new k_stage(stage_N, Gtype, app_name, app_path, fgno, emp_id, emp_name, filePath, firmware_name);
-                        instance.SQL_Upload(serial, boardfail,"Failed at K3");
+
+                        //var instance = new k_stage(stage_N, Gtype, app_name, app_path, fgno, emp_id, emp_name, filePath, firmware_name);
+                        currentStage.SQL_Upload(serial, boardfail, "Failed at K3");
+                        currentStage.lbl_result.Text = $"Serial no: {serial} is FAIL in K3 stage";
+                        currentStage.lbl_result.BackColor = Color.Green;
+                        currentStage.lbl_result.ForeColor = Color.White;
+                        boardfail = true;
                         return;
                     }
 
@@ -857,7 +867,7 @@ namespace K1_Stages
             txt_live_stat.ScrollToCaret();
 
             base.Update();
-            
+
             System.Windows.Forms.Application.DoEvents();
         }
 
@@ -1186,8 +1196,11 @@ namespace K1_Stages
                             {
                                 board_status = "PASS";
                                 writestatusMessage($"Serial no: {Serial_no} is Pass", "Final QC status");
-                                SQL_Upload(Serial_no,false,"Passed at QC");
+                                SQL_Upload(Serial_no, false, "Passed at K3&QC");
                                 popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Green, Color.White, true);
+                                lbl_result.Text = $"Serial no: {Serial_no} is Pass in K3-CDI stage";
+                                lbl_result.BackColor = Color.Green;
+                                lbl_result.ForeColor = Color.White;
                             }
                             else
                             {
@@ -1195,6 +1208,9 @@ namespace K1_Stages
                                 writestatusMessage($"Serial no: {Serial_no} is Fail", "Final QC status");
                                 SQL_Upload(Serial_no, true, "Failed at QC");
                                 popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Red, Color.White, false);
+                                lbl_result.Text = $"Serial no: {Serial_no} is fail in CDI stage";
+                                lbl_result.BackColor = Color.Red;
+                                lbl_result.ForeColor = Color.White;
                             }
 
                             var record = new QcDataRecord
@@ -1428,7 +1444,7 @@ namespace K1_Stages
         }
 
 
-        private void SQL_Upload(string Sno, bool boardfail,string Result_Remarks)
+        private void SQL_Upload(string Sno, bool boardfail, string Result_Remarks)
         {
 
             try

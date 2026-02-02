@@ -52,9 +52,9 @@ namespace K1_Stages
             this.MaximizeBox = false;
             lbl_filepathvalue.Enabled = false;
             lbl_startinfo.Enabled = false;
-            cmb_stage.Text = "K1";
+            //cmb_stage.Text = "K3";
             cmb_stage.Visible = false;
-            
+
             //this.Shown += K1_load_Shown; // Attach Shown event
 
             //Filevalidation();
@@ -79,7 +79,7 @@ namespace K1_Stages
         private bool Filevalidation()
         {
             string fg_name = cmb_capacity.Text;
-            string stage_name = cmb_stage.Text;
+            string stage_name = lbl_stage_load.Text;
 
 
             var lstfgappdetails = dbConnection.get_app_Name(fg_name, stage_name); // Load file details from DB
@@ -96,14 +96,14 @@ namespace K1_Stages
                         Gentype = appfg.fg_model;
 
                     }
-                }   
+                }
 
                 try
                 {
-                    if (App_Name== "SSDMP.exe")
+                    if (App_Name == "SSDMP.exe")
                     {
                         ssdmpFilePathG3 = App_LogPath;
-                       
+
                         ssdmpG3 = ($"Gen3X3_{System.DateTime.Now.ToString("dd-MM-yyyy_HH_mm_ss")}.log");
                         if (!Directory.Exists(Logsbkppath))
                         {
@@ -117,7 +117,7 @@ namespace K1_Stages
                             File.WriteAllText(ssdmpFilePathG3, string.Empty);
                         }
 
-                        if (!File.Exists(G3appPath))
+                        if (!File.Exists(App_Path))
                         {
                             MessageBox.Show("Please check the Gen3X3  Application path", "Application File Missing", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return false; // signal failure
@@ -125,7 +125,7 @@ namespace K1_Stages
 
                         return true; // validation passed
                     }
-                    else if (App_Name == "SM2268XT2_MPTool.exe"  || App_Name== "MPTools.exe")
+                    else if (App_Name == "SM2268XT2_MPTool.exe" || App_Name == "MPTools.exe")
                     {
                         ssdmpFilePathG4 = App_LogPath;
                         ssdmpG4 = Path.Combine(ssdmpFilePathG4, ($"{fileNameg4}.txt"));
@@ -139,7 +139,7 @@ namespace K1_Stages
                             Thread.Sleep(1000);
                             File.WriteAllText(ssdmpG4, string.Empty);
                         }
-                        if ( !File.Exists(G4appPath))
+                        if (!File.Exists(App_Path))
                         {
                             MessageBox.Show("Please check the Gen4X4 Application path", "Application File Missing", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return false; // signal failure
@@ -204,8 +204,8 @@ namespace K1_Stages
             try
             {
 
-                string stageval = "K1";
-                var listNos = dbConnection.getcapacity(stageval,cmb_prdctModel.Text);
+                string stageval = lbl_stage_load.Text;
+                var listNos = dbConnection.getcapacity(stageval, cmb_prdctModel.Text);
                 suppressCapacityEvent = true;
                 if (listNos != null && listNos.Count > 0)
                 {
@@ -224,7 +224,7 @@ namespace K1_Stages
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString()); 
+                MessageBox.Show(ex.Message.ToString());
             }
         }
 
@@ -242,7 +242,7 @@ namespace K1_Stages
                 lbl_filepathvalue.Enabled = false;
                 lbl_filepathvalue.Visible = true;
                 lbl_filepathvalue.Text = $"File Name :{filepath}";
-                
+
                 lbl_startinfo.Enabled = false;
                 lbl_startinfo.Visible = true;
                 lbl_startinfo.Text = "Please validate and Press the start Button ";
@@ -256,20 +256,20 @@ namespace K1_Stages
         private void btn_start_Click(object sender, EventArgs e)
         {
 
-                string stage = "K1";
-                string Prduct_model= cmb_prdctModel.Text;
-                string fg = cmb_capacity.Text;
-                string emp_id = txt_empid.Text;
-                string emp_name = txt_emp_name.Text;
+            string stage = lbl_stage_load.Text;
+            string Prduct_model = cmb_prdctModel.Text;
+            string fg = cmb_capacity.Text;
+            string emp_id = txt_empid.Text;
+            string emp_name = txt_emp_name.Text;
 
 
-            if (stage != "select stage" && Prduct_model!= "Select model" && !string.IsNullOrEmpty(fg) && (!string.IsNullOrEmpty(emp_id)) && !string.IsNullOrEmpty(emp_name))
+            if (stage != "select stage" && Prduct_model != "Select model" && !string.IsNullOrEmpty(fg) && (!string.IsNullOrEmpty(emp_id)) && !string.IsNullOrEmpty(emp_name))
             {
                 bool valid = Filevalidation();
                 if (valid)
                 {
 
-                    k_stage k1form = new k_stage(stage, Prduct_model, App_Name, App_Path, fg, emp_id, emp_name, filepath,App_LogPath);
+                    k_stage k1form = new k_stage(stage, Prduct_model, App_Name, App_Path, fg, emp_id, emp_name, filepath, App_LogPath);
                     k1form.Show();
                     this.Hide();
                 }

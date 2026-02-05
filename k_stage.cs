@@ -342,8 +342,12 @@ namespace K1_Stages
                         System.Threading.Thread.Sleep(500);
 
                         // Select "Device" in ComboBox (AutomationId: "2112")
+                        var devicestationid = mainWindow.Name == "SSDMP 2.82.0.0_20240318_R_X64" ? "1040" : "2108";
+                        var MP_stationid = mainWindow.Name == "SSDMP 2.82.0.0_20240318_R_X64" ? "1043" : "2112";
+
+                        // Select "Device" in ComboBox (AutomationId: "2112")
                         var comboBoxdevice = mainWindow.FindFirstDescendant(cf =>
-                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId("2108")));
+                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId(devicestationid)));
                         var cmbdevicecurval = comboBoxdevice.AsComboBox();
 
                         var cmbdeviceval = cmbdevicecurval.AsTextBox().Text;
@@ -364,7 +368,7 @@ namespace K1_Stages
 
                         // Select "RDT" in ComboBox (AutomationId: "2112")
                         var comboBoxElement = mainWindow.FindFirstDescendant(cf =>
-                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId("2112")));
+                            cf.ByControlType(ControlType.ComboBox).And(cf.ByAutomationId(MP_stationid)));
 
                         var cmbk1curval = comboBoxElement.AsComboBox();
 

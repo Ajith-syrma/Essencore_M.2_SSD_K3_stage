@@ -31,7 +31,6 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(K1_load));
             lbl_app_id = new Label();
             lbl_hdr_app_id = new Label();
-            K1_STAGE = new Label();
             lbl_sw_version = new Label();
             lbl_hdr_sw_version = new Label();
             pictureBox3 = new PictureBox();
@@ -51,6 +50,8 @@
             cmb_stage = new ComboBox();
             lbl_prd_model = new Label();
             cmb_prdctModel = new ComboBox();
+            lbl_stage_load = new Label();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
@@ -81,18 +82,6 @@
             lbl_hdr_app_id.TabIndex = 3;
             lbl_hdr_app_id.Text = "App ID";
             lbl_hdr_app_id.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // K1_STAGE
-            // 
-            K1_STAGE.AutoSize = true;
-            K1_STAGE.BackColor = Color.SteelBlue;
-            K1_STAGE.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
-            K1_STAGE.ForeColor = Color.White;
-            K1_STAGE.Location = new Point(404, 9);
-            K1_STAGE.Name = "K1_STAGE";
-            K1_STAGE.Size = new Size(196, 68);
-            K1_STAGE.TabIndex = 1;
-            K1_STAGE.Text = "K1_STAGE";
             // 
             // lbl_sw_version
             // 
@@ -213,7 +202,6 @@
             cmb_capacity.Name = "cmb_capacity";
             cmb_capacity.Size = new Size(183, 33);
             cmb_capacity.TabIndex = 20;
-            cmb_capacity.SelectedIndex = 0;
             cmb_capacity.SelectedValueChanged += cmbcapacity_SelectedIndexChanged;
             // 
             // label4
@@ -277,7 +265,6 @@
             lbl_prd_model.Size = new Size(81, 29);
             lbl_prd_model.TabIndex = 34;
             lbl_prd_model.Text = "Model";
-
             // 
             // cmb_prdctModel
             // 
@@ -287,14 +274,38 @@
             cmb_prdctModel.Name = "cmb_prdctModel";
             cmb_prdctModel.Size = new Size(183, 33);
             cmb_prdctModel.TabIndex = 35;
-            cmb_prdctModel.SelectedIndex = 0;
             cmb_prdctModel.SelectedValueChanged += cmb_prdctModel_SelectedValueChanged;
+            // 
+            // lbl_stage_load
+            // 
+            lbl_stage_load.AutoSize = true;
+            lbl_stage_load.BackColor = Color.SteelBlue;
+            lbl_stage_load.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
+            lbl_stage_load.ForeColor = Color.White;
+            lbl_stage_load.Location = new Point(404, 9);
+            lbl_stage_load.Name = "lbl_stage_load";
+            lbl_stage_load.Size = new Size(68, 68);
+            lbl_stage_load.TabIndex = 1;
+            lbl_stage_load.Text = "K1";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.BackColor = Color.SteelBlue;
+            label1.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
+            label1.ForeColor = Color.White;
+            label1.Location = new Point(469, 9);
+            label1.Name = "label1";
+            label1.Size = new Size(139, 68);
+            label1.TabIndex = 36;
+            label1.Text = "STAGE";
             // 
             // K1_load
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(955, 450);
+            Controls.Add(label1);
             Controls.Add(cmb_prdctModel);
             Controls.Add(lbl_prd_model);
             Controls.Add(lbl_hdr_sw_version);
@@ -304,7 +315,7 @@
             Controls.Add(lbl_sw_version);
             Controls.Add(lbl_hdr_app_id);
             Controls.Add(pictureBox3);
-            Controls.Add(K1_STAGE);
+            Controls.Add(lbl_stage_load);
             Controls.Add(pictureBox2);
             Controls.Add(lbl_app_id);
             Controls.Add(txt_emp_name);
@@ -330,7 +341,6 @@
 
         private Label lbl_app_id;
         private Label lbl_hdr_app_id;
-        private Label K1_STAGE;
         private Label lbl_sw_version;
         private Label lbl_hdr_sw_version;
         private PictureBox pictureBox3;
@@ -350,5 +360,7 @@
         private ComboBox cmb_stage;
         private Label lbl_prd_model;
         private ComboBox cmb_prdctModel;
+        private Label lbl_stage_load;
+        private Label label1;
     }
 }

@@ -235,7 +235,7 @@ namespace K1_Stages
             cmb_capacity.Enabled = false;
             string stage = cmb_stage.Text;
             string capacity = cmb_capacity.Text;
-            filepath = dbConnection.GetFilePathdetail(cmb_stage.Text, cmb_capacity.Text);
+            filepath = dbConnection.GetFilePathdetail(lbl_stage_load.Text, cmb_capacity.Text);
             if (!string.IsNullOrEmpty(filepath) || filepath != "1")
             {
 

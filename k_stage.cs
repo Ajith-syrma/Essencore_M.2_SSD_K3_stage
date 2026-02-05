@@ -552,18 +552,21 @@ namespace K1_Stages
                 }
                 else
                 {
-                    // This is for SSD_SATA Mp_Tools Need to check UI Automation but still can lauch the App
-                    // Initialize and start the SSDMP file monitor timer
-                    fileMonitorTimer = new System.Windows.Forms.Timer
-                    {
-                        Interval = 5000 // Check every 5 seconds
-                    };
-                    fileMonitorTimer.Tick += FileMonitorTimer_Tick;
-                    fileMonitorTimer.Start();
-                    StartAppWithCleanup(App_Path);
-                    var app = Application.Launch(App_Path);
-                    app.WaitWhileMainHandleIsMissing();
-                    return null;
+                    //// This is for SSD_SATA Mp_Tools Need to check UI Automation but still can lauch the App
+                    //// Initialize and start the SSDMP file monitor timer
+                    //fileMonitorTimer = new System.Windows.Forms.Timer
+                    //{
+                    //    Interval = 5000 // Check every 5 seconds
+                    //};
+                    //fileMonitorTimer.Tick += FileMonitorTimer_Tick;
+                    //fileMonitorTimer.Start();
+                    //StartAppWithCleanup(App_Path);
+                    //var app = Application.Launch(App_Path);
+                    //app.WaitWhileMainHandleIsMissing();
+                    //return null;
+                    MessageBox.Show("No Application for the selected MP Tool");
+                    return "Completed";
+
 
                 }
 

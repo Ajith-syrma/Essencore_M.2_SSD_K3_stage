@@ -13,35 +13,23 @@ namespace K1_Stages
 {
     public partial class K1_load : Form
     {
-        // SSDMP.txt monitoring
+
         DbConnection dbConnection = new DbConnection();
-        //    private readonly string ssdmpFilePathG3 = ConfigurationManager.AppSettings["File_Path1"];
-        //    private readonly string ssdmpFilePathG4 = ConfigurationManager.AppSettings["File_Path2"];
+        private readonly string Logsbkppath = ConfigurationManager.AppSettings["BackupfilePath"];
+
         private string ssdmpFilePathG3;
         private string ssdmpFilePathG4;
-        private readonly string Logsbkppath = ConfigurationManager.AppSettings["BackupfilePath"];
-        public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
-        public string G4appPath = ConfigurationManager.AppSettings["Executable_Path2"];
         public string fileNameg4 = DateTime.Now.ToString("yyyyMMdd");
-
-
         public string ssdmpFilePath = string.Empty;
         public string ssdmpG3 = string.Empty;
         public string ssdmpG4 = string.Empty;
-        private DateTime lastSsdmpReadTime = DateTime.MinValue;
-        private DateTime _lastFileWriteTime = DateTime.MinValue;
-
-        private string lastHash;
         public string emp_id = "";
         public string emp_name = "";
         public string Gentype = "";
-        private string Filename;
         private string App_Name;
         private string App_Path;
         private string App_LogPath;
         public string filepath = string.Empty;
-
-        private bool isHandlingChange = false;
         bool suppressCapacityEvent = false;
 
 
@@ -62,19 +50,6 @@ namespace K1_Stages
 
         }
 
-        //private void K1_load_Shown(object sender, EventArgs e)
-        //{
-        //    this.Shown -= K1_load_Shown;
-        //    bool valid = Filevalidation();
-        //    if (!valid)
-        //    {
-        //        // Exit the application safely
-        //        Application.Exit();
-        //        return; // stop further execution
-        //    }
-
-        //     // only run if validation passed
-        //}
 
         private bool Filevalidation()
         {
@@ -168,35 +143,6 @@ namespace K1_Stages
             }
         }
 
-        //private void fg_load()
-        //{
-        //    cmb_stage.Enabled = false;
-        //    try
-        //    {
-
-        //        string stageval = "K1";
-        //        var listNos = dbConnection.getcapacity(stageval);
-        //        suppressCapacityEvent = true;
-        //        if (listNos != null && listNos.Count > 0)
-        //        {
-
-        //            cmb_capacity.DataSource = listNos;
-
-        //        }
-        //        else
-        //        {
-        //            cmb_capacity.DataSource = null;
-        //        }
-        //        suppressCapacityEvent = false;
-
-
-
-        //    }
-        //    catch (Exception ex)
-        //    { MessageBox.Show(ex.Message.ToString()); }
-
-        //}
-
         private void cmb_prdctModel_SelectedValueChanged(object sender, EventArgs e)
         {
 
@@ -205,7 +151,8 @@ namespace K1_Stages
             {
 
                 string stageval = lbl_stage_load.Text;
-                var listNos = dbConnection.getcapacity(stageval, cmb_prdctModel.Text);
+                string Product_model = cmb_prdctModel.Text=="M.2"?"1":"2";
+                var listNos = dbConnection.getcapacity(stageval, Product_model);
                 suppressCapacityEvent = true;
                 if (listNos != null && listNos.Count > 0)
                 {
@@ -294,5 +241,9 @@ namespace K1_Stages
             this.Close();
         }
 
+        private void K1_load_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

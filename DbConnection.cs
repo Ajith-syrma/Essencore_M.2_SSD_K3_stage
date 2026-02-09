@@ -14,9 +14,9 @@ namespace K1_Stages
 
     class DbConnection
     {
-        SqlConnection con = new SqlConnection(ConfigurationManager.AppSettings["conn"].ToString());
-        SqlConnection con1 = new SqlConnection(ConfigurationManager.AppSettings["conn1"].ToString());
-        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["conn2"].ToString());
+        SqlConnection SFCS_db = new SqlConnection(ConfigurationManager.AppSettings["SFCS"].ToString());
+        SqlConnection Barcode_db = new SqlConnection(ConfigurationManager.AppSettings["BARCODE"].ToString());
+        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["ESSENCORE"].ToString());
         SqlCommand cmd;
         SqlDataAdapter adapter;
         SqlDataReader reader;
@@ -26,7 +26,7 @@ namespace K1_Stages
         {
             try
             {
-                using (SqlCommand cmd = new SqlCommand("pro_update_result_stat", con1))
+                using (SqlCommand cmd = new SqlCommand("pro_update_result_stat", Barcode_db))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@serial_no", serial);
@@ -36,9 +36,9 @@ namespace K1_Stages
                     cmd.Parameters.AddWithValue("@test_time", testTime);
                     cmd.Parameters.AddWithValue("@status", status);
 
-                    con1.Open();
+                    Barcode_db.Open();
                     object reader = cmd.ExecuteScalar();
-                    con1.Close();
+                    Barcode_db.Close();
 
                     return reader?.ToString(); // handles null safely
                 }
@@ -55,15 +55,15 @@ namespace K1_Stages
         {
             try
             {
-                cmd = new SqlCommand("pro_update_result_stat", con);
+                cmd = new SqlCommand("pro_update_result_stat", SFCS_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@serial", serial);
                 cmd.Parameters.AddWithValue("@model", model);
                 cmd.Parameters.AddWithValue("@result", result);
                 //cmd.Parameters.AddWithValue("@Work_Orderno", Work_Orderno);
-                con.Open();
+                SFCS_db.Open();
                 var reader = cmd.ExecuteScalar();
-                con.Close();
+                SFCS_db.Close();
                 return reader.ToString();
             }
             catch (Exception ex)
@@ -105,15 +105,15 @@ namespace K1_Stages
         {
             try
             {
-                cmd = new SqlCommand("pro_get_serial_dup", con1);
+                cmd = new SqlCommand("pro_get_serial_dup", Barcode_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@serial_no", serial);
                 // cmd.Parameters.AddWithValue("@model", model);
                 //cmd.Parameters.AddWithValue("@result", result);
                 //cmd.Parameters.AddWithValue("@Work_Orderno", Work_Orderno);
-                con1.Open();
+                Barcode_db.Open();
                 var reader = cmd.ExecuteScalar();
-                con1.Close();
+                Barcode_db.Close();
                 return reader.ToString();
                 //return "Pass";
             }
@@ -127,13 +127,13 @@ namespace K1_Stages
         {
             try
             {
-                using (SqlCommand cmd = new SqlCommand("pro_getfg_name", con1))
+                using (SqlCommand cmd = new SqlCommand("pro_getfg_name", Barcode_db))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@serial_no", serialno);
-                    con1.Open();
+                    Barcode_db.Open();
                     object reader = cmd.ExecuteScalar();
-                    con1.Close();
+                    Barcode_db.Close();
 
                     return reader?.ToString(); // handles null safely
                 }
@@ -150,12 +150,12 @@ namespace K1_Stages
         {
             try
             {
-                SqlCommand cmd = new SqlCommand("pro_getmodel_name", con1);
+                SqlCommand cmd = new SqlCommand("pro_getmodel_name", Barcode_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@fg", fg);
-                con1.Open();
+                Barcode_db.Open();
                 var result = cmd.ExecuteScalar();
-                con1.Close();
+                Barcode_db.Close();
 
                 return result.ToString();
             }
@@ -171,12 +171,12 @@ namespace K1_Stages
         {
             try
             {
-                SqlCommand cmd = new SqlCommand("pro_getgentype", con1);
+                SqlCommand cmd = new SqlCommand("pro_getgentype", Barcode_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@fg", fg);
-                con1.Open();
+                Barcode_db.Open();
                 var result = cmd.ExecuteScalar();
-                con1.Close();
+                Barcode_db.Close();
 
                 return result.ToString();
             }
@@ -194,7 +194,7 @@ namespace K1_Stages
             {
 
                 Fgdetails objBar;
-                cmd = new SqlCommand("pro_getfg_details", con1);
+                cmd = new SqlCommand("pro_getfg_details", Barcode_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@fg_name", fgno);
                 adapter = new SqlDataAdapter(cmd);
@@ -256,7 +256,7 @@ namespace K1_Stages
 
                 foreach (var record in records)
                 {
-                    using (SqlCommand cmd = new SqlCommand("pro_InsertQcData", con1))
+                    using (SqlCommand cmd = new SqlCommand("pro_InsertQcData", Barcode_db))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
 
@@ -271,9 +271,9 @@ namespace K1_Stages
                         cmd.Parameters.AddWithValue("@DriveLetter", record.DriveLetter);
                         cmd.Parameters.AddWithValue("@DiskSize", record.DiskSize);
                         cmd.Parameters.AddWithValue("@boardstatus", record.boardstatus);
-                        con1.Open();
+                        Barcode_db.Open();
                         cmd.ExecuteNonQuery();
-                        con1.Close();
+                        Barcode_db.Close();
                     }
                 }
 
@@ -353,12 +353,12 @@ namespace K1_Stages
         {
             try
             {
-                cmd = new SqlCommand("pro_get_pcbserialno", con1);
+                cmd = new SqlCommand("pro_get_pcbserialno", Barcode_db);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@serial", serial);
-                con.Open();
+                Barcode_db.Open();
                 var reader = cmd.ExecuteScalar();
-                con.Close();
+                Barcode_db.Close();
                 return reader.ToString();
             }
             catch (Exception ex)

@@ -4,48 +4,40 @@ using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
-using K1_Stages;
 using Microsoft.Office.Interop.Excel;
-
-//using Microsoft.Office.Interop.Excel;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
-using System.Drawing;
-using System.IO;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 using Application = FlaUI.Core.Application;
-//using Excel = Microsoft.Office.Interop.Excel;
+
 using Point = System.Drawing.Point;
 namespace K1_Stages
 {
     public partial class k_stage : Form
     {
         #region variable decl,dll,appconf
-
+        //Declaration from  App config 
         DbConnection dbConnection = new DbConnection();
-        SqlConnection con = new SqlConnection(ConfigurationManager.AppSettings["conn"].ToString());
-        SqlConnection con1 = new SqlConnection(ConfigurationManager.AppSettings["conn1"].ToString());
-        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["conn2"].ToString());
+        SqlConnection SFCS_db = new SqlConnection(ConfigurationManager.AppSettings["SFCS"].ToString());
+        SqlConnection Barcode_db = new SqlConnection(ConfigurationManager.AppSettings["BARCODE"].ToString());
+        SqlConnection Essencore_db = new SqlConnection(ConfigurationManager.AppSettings["ESSENCORE"].ToString());
         public string CONFIG_NETWORKPATH = ConfigurationManager.AppSettings["NETWORKPATH"];
         private string CONFIG_ISONLINE = ConfigurationManager.AppSettings["ISONLINE"];
-
+       //DLL imports for window manipulation and DPI awareness
         [DllImport("user32.dll")]
         private static extern bool SetProcessDPIAware();
-        [DllImport("user32.dll")]
-
+        //[DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        // Variables for barcode scanning and form positioning
         private StringBuilder barcodeData = new StringBuilder();
+        // Constants for ShowWindow function
         private const int SW_MINIMIZE = 6;
         private const int SW_MAXIMIZE = 3;
+        // Variables for application state and data handling
         public string board_status = "";
         private string currentText = null;
         private string Model_name = null;
@@ -58,9 +50,7 @@ namespace K1_Stages
         private int Temp_val = 0;
         private string Health_stat = null;
         private int Health_value = 0;
-
-
-
+        // Variables for SFCS 
         string errordesc = "";
         public string[] nextidinfo = { "", "" };
         public string[] reworkidinfo = { "24", "Rework" };
@@ -70,23 +60,10 @@ namespace K1_Stages
         public bool boardonline = false;
         public bool boardfail = true;
         public string[] infologindetails = { "", "" };
-
-
-        // Timers
-        private System.Windows.Forms.Timer monitorTimer;      // FlaUI UI monitor timer
-        private System.Windows.Forms.Timer fileMonitorTimer;  // SSDMP.txt file monitor timer
-
-        // FlaUI Window reference
-        private FlaUI.Core.AutomationElements.Window mainWindow;
-
-
-        // SSDMP.txt monitoring
-        //public string G3appPath = ConfigurationManager.AppSettings["Executable_Path1"];
-        //public string G4appPath = ConfigurationManager.AppSettings["Executable_Path2"];
-
+        // Timers for monitoring application state and file changes
+        private System.Windows.Forms.Timer monitorTimer;      
+        private System.Windows.Forms.Timer fileMonitorTimer;
         public string fileNameg4 = DateTime.Now.ToString("yyyyMMdd");
-
-
         public string ssdmpFilePath = string.Empty;
         public string ssdmpG3 = string.Empty;
         public string ssdmpG4 = string.Empty;
@@ -94,11 +71,13 @@ namespace K1_Stages
         private DateTime _lastFileWriteTime = DateTime.MinValue;
         private bool fileMonitorStarted = false;
         private string lastHash;
+        // FlaUI Window reference
+        private FlaUI.Core.AutomationElements.Window mainWindow;
+        // Variables for K3 Stage and CDI
         public string emp_id = "";
         public string emp_name = "";
-        public string capacity = ""; // declartion of fg_number
+        public string capacity = ""; 
         public string stage = "";
-
         public string Gentype = "";
         private string Filename;
         public string Log_filePath;
@@ -109,41 +88,32 @@ namespace K1_Stages
         private string Firmware_Name;
         private bool isHandlingChange = false;
         bool suppressCapacityEvent = false;
-
-
-
         #endregion
 
         #region UI_components
-        public k_stage(string stage_name, string Prduct_model, string App_N, string App_Pth,
-                        string fg, string emp_id, string emp_name, string f_name, string App_logpath)
+        public k_stage(string stage_name, string Prduct_model, string App_N, string App_Pth,string fg, string emp_id, string emp_name, string f_name, string App_logpath)
         {
             InitializeComponent();
+            //variable initialization from parameters and configuration
             stage = stage_name;
             product_Model = Prduct_model;
             App_Name = App_N;
             App_Path = App_Pth;
             Fg = fg;
-            //Emp_id = emp_id;
-            //Emp_name = emp_name;
             Firmware_Name = f_name;
             Log_filePath = App_logpath;
-
-
+            //set form properties and event handlers
             this.MaximizeBox = false;
             lbl_filepathvalue.Enabled = false;
             lbl_startinfo.Enabled = false;
             this.MinimizeBox = false;
-            lbldate.Text = DateOnly.FromDateTime(DateTime.Now).ToString();
-
-            //txt_empid.KeyDown += Txtempid_KeyDown;
-            //txt_emp_name.KeyDown += Txtempid_KeyDown;
-            //cmb_stage.Text = "K1";
-            //cmb_stage.Visible = false;
-            //cmb_stage.KeyDown += Txtempid_KeyDown;
-            //cmb_capacity.KeyDown += Txtempid_KeyDown;
+            lblemp_id.Text = emp_id;
+            lbl_date.Text = DateOnly.FromDateTime(DateTime.Now).ToString();
             this.FormClosing += Form1_close;
             this.Shown += Form1_Shown;
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
 
             k1_stage_test(stage_name, Prduct_model, App_N, fg, emp_id, emp_name, f_name);
             this.Show();
@@ -154,6 +124,17 @@ namespace K1_Stages
 
 
         }
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_NCLBUTTONDOWN = 0xA1;
+            const int HTCAPTION = 0x2;
+
+            if (m.Msg == WM_NCLBUTTONDOWN && m.WParam.ToInt32() == HTCAPTION)
+                return; // block dragging
+
+            base.WndProc(ref m);
+        }
+
 
         private void Txt_SN_KeyDown(object sender, KeyEventArgs e)
         {
@@ -197,6 +178,17 @@ namespace K1_Stages
             }
         }
 
+        private void move_Formto_center()
+        {
+            StartPosition = FormStartPosition.Manual;
+
+            Screen screen = Screen.FromControl(this);
+            Location = new Point(
+                screen.WorkingArea.Left + (screen.WorkingArea.Width - Width) / 2,
+                screen.WorkingArea.Top + (screen.WorkingArea.Height - Height) / 2
+            );
+        }
+
 
 
         private void move_Formto_left()
@@ -226,7 +218,21 @@ namespace K1_Stages
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+          if (App_Name == "SM2268XT2_MPTool.exe")
+          {
+            move_Formto_center();
+          }
+
+          else if (App_Name == "SSDMP.exe")
+          {
             move_Formto_left();
+          }
+
+          else
+          {
+            move_Formto_center();
+          }
+            
         }
 
 
@@ -244,7 +250,7 @@ namespace K1_Stages
             emp_id = employe_id;
             emp_name = employee_name;
             Filename = f;
-            Fill_Response_Data("K1 Stage Test started");
+            Fill_Response_Data("K3 Stage Test");
 
             string modelname = dbConnection.getmodel(capacity);
             Gentype = dbConnection.getgentype(capacity);
@@ -271,9 +277,7 @@ namespace K1_Stages
         #endregion
 
         #region modeltypehandlerK3
-        public string Spd_Automation(string stageName, string capacity,
-                                     string Filepath, string emp_id,
-                                     string emp_name, string model, string Gentype, string Applic_Name)
+        public string Spd_Automation(string stageName, string capacity,string Filepath, string emp_id,string emp_name, string model, string Gentype, string Applic_Name)
         {
             try
             {
@@ -300,7 +304,7 @@ namespace K1_Stages
                         writestatusMessage("SSDMP Window not found", "Window not found");
                         return null;
                     }
-
+                    Fill_Response_Data("SSDMP MP Tool Started");
                     writestatusMessage("SSDMP Window found", "Window found");
                     var allButtons = mainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.Button)).ToList();
                     var allcombo = mainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox)).ToList();
@@ -332,6 +336,7 @@ namespace K1_Stages
                             System.Threading.Thread.Sleep(100);
                             fpTextBox.Text = filepathGen3;
                         }
+                        Fill_Response_Data($"Firmware :{filepathGen3}");
 
                         // Click "Open" button (AutomationId: "1")
                         var openButton = loadK1Window.FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
@@ -411,6 +416,7 @@ namespace K1_Stages
                             System.Threading.Thread.Sleep(100);
                             itemToSelect.Click();
                             writestatusMessage($"Stage name is {stageName}, so '{k1val}' is selected.", "Stage selected");
+                            Fill_Response_Data($"Stage name is {stageName}, so '{k1val}' is selected.");
                         }
                         else
                         {
@@ -441,10 +447,12 @@ namespace K1_Stages
                                 System.Threading.Thread.Sleep(100);
                                 memTextBox.Enter(expectedValue);
                                 writestatusMessage($"Capacity {expectedValue} is selected", "capacity selected");
+                                Fill_Response_Data($"Capacity {expectedValue} is selected");
                             }
 
                             modTextBox.Text = model;
                             writestatusMessage($"The model value is{model}", "Model selected");
+                            Fill_Response_Data($"The model value is{model}");
 
                         }
                     }
@@ -474,6 +482,7 @@ namespace K1_Stages
                         writestatusMessage("SM2268XT2 MPTool Window not found", "Window not found");
                         return null;
                     }
+                    Fill_Response_Data("SM2268XT2 MPTool Started");
                     Thread.Sleep(1000);
                     var parameterTab = mainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Parameter")));
                     if (parameterTab != null)
@@ -519,11 +528,14 @@ namespace K1_Stages
                             fpTextBox.Text = filepathGen4;
                         }
 
+
                         else
                         {
                             MessageBox.Show("File path in File load dialog box not found");
                             writestatusMessage("File path in File load dialog box not found", "Text box Not found");
+                            
                         }
+                        Fill_Response_Data($"Firmware :{filepathGen4}");
 
 
                         var openButton = loadK1Window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("1")));
@@ -696,7 +708,6 @@ namespace K1_Stages
                 Console.WriteLine("Log file not found.");
                 return;
             }
-
             if (Gtype == "Gen4x4")
             {
                 string lastLine = File.ReadLines(filePath).LastOrDefault();
@@ -721,7 +732,6 @@ namespace K1_Stages
 
                 Console.WriteLine($"Serial: {serial}, Status: {status}, Duration: {durationSeconds}s");
             }
-
             else
             {
                 string content = File.ReadAllText(filePath);
@@ -734,8 +744,6 @@ namespace K1_Stages
                 }
 
                 string lastValidBlock = null;
-
-
                 for (int i = matches.Count - 1; i >= 0; i--)
                 {
                     var block = matches[i].Groups[1].Value;
@@ -746,14 +754,11 @@ namespace K1_Stages
                         break;
                     }
                 }
-
                 if (string.IsNullOrEmpty(lastValidBlock))
                 {
                     Console.WriteLine("No valid DUT blocks with result data found.");
                     return;
                 }
-
-
                 string pattern = @"\b(Pass|Fail)\b(?:\s+\([^\)]+\))?\s+Test time:";
                 status = Regex.Match(lastValidBlock, pattern).Groups[1].Value.Trim();
                 testTime = Regex.Match(lastValidBlock, @"Test time:\s*(.+)").Groups[1].Value.Trim();
@@ -761,101 +766,91 @@ namespace K1_Stages
                 serial = Regex.Match(lastValidBlock, @"Serial number:\s*(.+)").Groups[1].Value.Trim();
                 capacity = Regex.Match(lastValidBlock, @"Capacity:\s*(.+)").Groups[1].Value.Trim();
                 station = Regex.Match(lastValidBlock, @"Station:\s*(.+)").Groups[1].Value.Trim();
-
             }
 
-
-
-
             DbConnection dbconnect = new DbConnection();
-
             var ser_len = serial.Length;
-
-
             if ((ser_len == 14 || ser_len == 17) && (serial.StartsWith("ES") || (serial.StartsWith("EN"))))
             {
-                var stage_count = dbconnect.get_serial_dup(serial, model);
-
-                if (stage_count == "0" || stage_count == "Status not found")
+                //var stage_count = dbconnect.get_serial_dup(serial, model);
+                bool checkstage = currentStage.Check_Curr_Stage(serial, currentStage.lbl_app_id.Text, currentStage.lblstagename.Text, currentStage.boardonline);
+                if (checkstage)
                 {
-
+                //    if (stage_count == "0" || stage_count == "Status not found")
+                //{
                     dbconnect.DbConnect(serial, model, capacity, station, testTime, status);
-
-
-
-
                     var displayColor = status.Equals("Pass", StringComparison.OrdinalIgnoreCase) ? Color.Green : Color.Red;
-
-
                     // Debug output
-                    System.Diagnostics.Debug.WriteLine("---- Last Valid DUT Result ----");
-                    System.Diagnostics.Debug.WriteLine($"status   : {status}");
-                    System.Diagnostics.Debug.WriteLine($"test_time : {testTime}");
-                    System.Diagnostics.Debug.WriteLine($"model    : {model}");
-                    System.Diagnostics.Debug.WriteLine($"serial_no  : {serial}");
-                    System.Diagnostics.Debug.WriteLine($"capacity : {capacity}");
-                    System.Diagnostics.Debug.WriteLine($"station  : {station}");
+                    //System.Diagnostics.Debug.WriteLine("---- Last Valid DUT Result ----");
+                    //System.Diagnostics.Debug.WriteLine($"status   : {status}");
+                    //System.Diagnostics.Debug.WriteLine($"test_time : {testTime}");
+                    //System.Diagnostics.Debug.WriteLine($"model    : {model}");
+                    //System.Diagnostics.Debug.WriteLine($"serial_no  : {serial}");
+                    //System.Diagnostics.Debug.WriteLine($"capacity : {capacity}");
+                    //System.Diagnostics.Debug.WriteLine($"station  : {station}");
 
-
+                    currentStage.Fill_Response_Data("----K_STAGE-Log File Data---");
+                    currentStage.Fill_Response_Data($"status   : {status}");
+                    currentStage.Fill_Response_Data($"test_time : {testTime}");
+                    currentStage.Fill_Response_Data($"model    : {model}");
+                    currentStage.Fill_Response_Data($"serial_no  : {serial}");
+                    currentStage.Fill_Response_Data($"capacity : {capacity}");
+                    currentStage.Fill_Response_Data($"station  : {station}");
 
 
                     if (status.Equals("Pass", StringComparison.OrdinalIgnoreCase))
                     {
-
                         //var qc = new k_stage(stage_N, Gtype,app_name,app_path,fgno,emp_id,emp_name,firmware_name, filePath);
                         writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is Pass in K3 and moved for Qc", "Board status");
+                        currentStage.Fill_Response_Data($"(Serial No: {serial}-- Capacity: {capacity} is Pass in K3 and on CDI Stage");
                         currentStage.qcstage_validation(serial, capacity, emp_id, emp_name);
-
                         return;
                     }
                     else
                     {
                         popup.ShowDialogMessage($"{serial} -- {status} at K3", displayColor, Color.White, false);
                         writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail in K3", "Board status");
-
-
                         //var instance = new k_stage(stage_N, Gtype, app_name, app_path, fgno, emp_id, emp_name, filePath, firmware_name);
+                        boardfail = true;
                         currentStage.SQL_Upload(serial, boardfail, "Failed at K3");
                         currentStage.lbl_result.Text = $"Serial no: {serial} is FAIL in K3 stage";
-                        currentStage.lbl_result.BackColor = Color.Green;
+                        currentStage.lbl_result.BackColor = Color.Red;
                         currentStage.lbl_result.ForeColor = Color.White;
-                        boardfail = true;
-                        return;
+                        currentStage.Fill_Response_Data($"Serial no: {serial} is FAIL in K3 stage");
+                            
                     }
 
                 }
-
-                else if (stage_count == "1")
-                {
-                    // var displayColor =
-                    popup.ShowDialogMessage($"{serial} --is already pass at K3 Please scan the next serial Number", Color.Red, Color.White, false);
-                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is already pass at k3", "Board status");
-                    return;
-                }
-
-                else if (stage_count == "2")
-                {
-                    // var displayColor = Color.Red;
-                    popup.ShowDialogMessage($"{serial} --is already fail at K3 Please scan the next serial Number", Color.Red, Color.White, false);
-                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is already fail at k3", "Board status");
-                    return;
-                }
-
+                //else if (stage_count == "1")
+                //{
+                //    // var displayColor =
+                //    popup.ShowDialogMessage($"{serial} --is already pass at K3 Please scan the next serial Number", Color.Red, Color.White, false);
+                //    writestatusMessage($"Serial No: {serial}-- Capacity: {capacity} is already pass at k3", "Board status");
+                //    currentStage.Fill_Response_Data($"Serial No: {serial}-- Capacity: {capacity} is already pass at k3");
+                //    return;
+                //}
+                //else if (stage_count == "2")
+                //{
+                //    // var displayColor = Color.Red;
+                //    popup.ShowDialogMessage($"{serial} --is already fail at K3 Please scan the next serial Number", Color.Red, Color.White, false);
+                //    writestatusMessage($"Serial No: {serial}-- Capacity: {capacity} is already fail at k3", "Board status");
+                //    currentStage.Fill_Response_Data($"Serial No: {serial}-- Capacity: {capacity} is already fail at k3");
+                //    return;
+                //}
                 else
                 {
-                    writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} status not found", "Board status");
+                    writestatusMessage($"Serial No: {serial}-- Capacity: {capacity} status not found", "Stage Mismatch");
+                    currentStage.Fill_Response_Data($"Serial No: {serial}-- Capacity: {capacity} Stage Mismatch");
                     return;
                 }
 
-
             }
-
             else
             {
 
                 writestatusMessage($"(Serial No: {serial}-- Capacity: {capacity} is fail -Serial Number not scanned Properly", "Board status");
-
                 popup.ShowDialogMessage($"Please scan the correct serial Number", Color.Red, Color.White, false);
+                currentStage.Fill_Response_Data($"(Serial No: {serial}-- Capacity: {capacity} is fail -Serial Number not scanned Properly");
                 return;
             }
 
@@ -884,7 +879,8 @@ namespace K1_Stages
 
         public void qcstage_validation(string serialno, string capacity, string emp_id, string emp_name)
         {
-            writestatusMessage($"Serial No: {serialno}-- Capacity: {capacity} is pass and in Qc stage", "Board status");
+            writestatusMessage($"Serial No: {serialno}-- Capacity: {capacity} is pass IN K3 and in Qc stage", "Board status");
+            Fill_Response_Data($"Serial No: {serialno}-- Capacity: {capacity} is pass in K3 and in Qc stage");
             var fg_num = dbConnection.getfgname(serialno);
             if ((!string.IsNullOrEmpty(fg_num)))
             {
@@ -896,6 +892,8 @@ namespace K1_Stages
                     var Firmware = fg_detail.Firmware;
                     var Disksize = fg_detail.Disksize;
                     writestatusMessage($"Serialno :{serialno}-- Fgno :{fg_num}--Model :{Model}--Firmware :{Firmware}--Disksize :{Disksize}", "Fg details");
+                    Fill_Response_Data("----------Values for reference from the database---------");
+                    Fill_Response_Data($"Serialno :{serialno}-- Fgno :{fg_num}--Model :{Model}--Firmware :{Firmware}--Disksize :{Disksize}");
                     processScannedText(Model, Firmware, Disksize, serialno, fg_num, emp_id, emp_name);
 
                 }
@@ -960,6 +958,7 @@ namespace K1_Stages
 
                 // Wait for the loading form to be fully loaded
                 loadingFormReady.WaitOne();
+                Fill_Response_Data("Loading QC Application");
 
 
                 try
@@ -1196,23 +1195,38 @@ namespace K1_Stages
                             healthstatpass = Health_stat.Equals("Good", StringComparison.OrdinalIgnoreCase) && Health_value > 80;
                             diskSizePass = Disk_size.Equals(Disksizedb.Trim());
 
+                            Fill_Response_Data($"Serial_no    :{Serial_no.Trim()}--------{serialnopass}");
+                            Fill_Response_Data($"Firmware_no  :{Firmware_val.Trim()}-----{firwarepass}");
+                            Fill_Response_Data($"Model Name   :{Model_name.Trim()}-------{modelnopass}");
+                            Fill_Response_Data($"Temperature  :{Temp_val.ToString()}-----{temperaturepass}");
+                            Fill_Response_Data($"Health Status:{Health_stat.ToString()}--{healthstatpass}");
+                            Fill_Response_Data($"Disk Size    :{Disk_size.ToString()}--{diskSizePass}");
+
+
+
+
                             bool allPass = serialnopass && firwarepass && modelnopass &&
                                   temperaturepass && healthstatpass && driveletterpass && diskSizePass;
+                            
 
                             if (allPass)
                             {
+
                                 board_status = "PASS";
                                 writestatusMessage($"Serial no: {Serial_no} is Pass", "Final QC status");
+                                Fill_Response_Data($"Serial no: {Serial_no} is Pass at K3 and CDI Stage");
                                 SQL_Upload(Serial_no, false, "Passed at K3&QC");
                                 popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Green, Color.White, true);
                                 lbl_result.Text = $"Serial no: {Serial_no} is Pass in K3-CDI stage";
                                 lbl_result.BackColor = Color.Green;
                                 lbl_result.ForeColor = Color.White;
+
                             }
                             else
                             {
                                 board_status = "FAIL";
                                 writestatusMessage($"Serial no: {Serial_no} is Fail", "Final QC status");
+                                Fill_Response_Data($"Serial no: {Serial_no} is Fail at CDI Stage");
                                 SQL_Upload(Serial_no, true, "Failed at QC");
                                 popup.ShowDialogMessage($"{Serial_no} -- {board_status} at QC Testing", Color.Red, Color.White, false);
                                 lbl_result.Text = $"Serial no: {Serial_no} is fail in CDI stage";
@@ -1384,10 +1398,7 @@ namespace K1_Stages
 
         #endregion
 
-        private void pictureBox2_Click(object sender, EventArgs e)
-        {
 
-        }
 
 
         #region SFCS_DATA
@@ -1397,12 +1408,12 @@ namespace K1_Stages
             {
                 if (boardonline)
                 {
-                    con.Close();
+                    SFCS_db.Close();
                     using (SqlCommand cmd = new SqlCommand(
-                        "SELECT * FROM PCBA_NextStage(NOLOCK) WHERE PCBA_Id = '" + serialno + "'", con))
+                        "SELECT * FROM PCBA_NextStage(NOLOCK) WHERE PCBA_Id = '" + serialno + "'", SFCS_db))
                     {
-                        if (con.State == ConnectionState.Closed)
-                            con.Open();
+                        if (SFCS_db.State == ConnectionState.Closed)
+                            SFCS_db.Open();
 
                         using (SqlDataReader sdr = cmd.ExecuteReader())
                         {
@@ -1411,13 +1422,14 @@ namespace K1_Stages
                                 infosfromboard[0] = sdr["Work_order_no"].ToString();
                                 infosfromboard[1] = sdr["Rework_count"].ToString();
 
-                                //Fill_Response_Data("Board Waiting ID : " + sdr["Next_Stage_id"].ToString());
-                                //Fill_Response_Data("Board Workorder : " + infosfromboard[0]);
-                                //Fill_Response_Data("Board RW : " + infosfromboard[1]);
-
+                                Fill_Response_Data("Board Waiting ID : " + sdr["Next_Stage_id"].ToString());
+                                Fill_Response_Data("Board Workorder : " + infosfromboard[0]);
+                                Fill_Response_Data("Board RW : " + infosfromboard[1]);
+                                lbl_wo.Text = infosfromboard[0];
+                                Get_Completed_Qty();
                                 if (sdr["Next_Stage_id"].ToString() == app_id)
                                 {
-                                    con.Close();
+                                    SFCS_db.Close();
                                     return true;
                                 }
                                 else
@@ -1425,14 +1437,14 @@ namespace K1_Stages
                                     errordesc = "Stage Mismatch for this PCB : " + serialno + ".\n" +
                                                 "Expected is : " + sdr["Next_Stage_id"] + "|" + sdr["Next_Stage_name"] + ".\n" +
                                                 "Actual is : " + app_id + "|" + stage + ".";
-                                    con.Close();
+                                    SFCS_db.Close();
                                     return false;
                                 }
                             }
                             else
                             {
                                 errordesc = "No Data for this PCB : " + serialno + " in SFCS Master Table.";
-                                con.Close();
+                                SFCS_db.Close();
                                 return false;
                             }
                         }
@@ -1456,7 +1468,7 @@ namespace K1_Stages
 
             try
             {
-                con.Close();
+                SFCS_db.Close();
 
                 SqlCommand cmd = new SqlCommand(
                     "INSERT INTO DASHBOARD_ESSENCOREDATAS VALUES (" +
@@ -1477,13 +1489,13 @@ namespace K1_Stages
                     "'" + lblemp_id.Text + "'," +
                     "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss')," +
                     "HOST_NAME(),'','','')",
-                    con);
+                    SFCS_db);
 
-                if (con.State == ConnectionState.Closed)
-                    con.Open();
+                if (SFCS_db.State == ConnectionState.Closed)
+                    SFCS_db.Open();
 
                 cmd.ExecuteNonQuery();
-                con.Close();
+                SFCS_db.Close();
                 Fill_Response_Data("SQL Report Success. - SFCS Dashboard");
             }
             catch (Exception ex)
@@ -1500,7 +1512,7 @@ namespace K1_Stages
             {
                 try
                 {
-                    con.Close();
+                    SFCS_db.Close();
 
                     SqlCommand cmd = new SqlCommand(
                         "UPDATE PCBA_NextStage SET " +
@@ -1511,13 +1523,13 @@ namespace K1_Stages
                         "Update_Machine_id = HOST_NAME(), " +
                         "Update_Emp_id = '" + lblemp_id.Text + "' " +
                         "WHERE PCBA_Id = '" + Sno + "'",
-                        con);
+                        SFCS_db);
 
-                    if (con.State == ConnectionState.Closed)
-                        con.Open();
+                    if (SFCS_db.State == ConnectionState.Closed)
+                        SFCS_db.Open();
 
                     cmd.ExecuteNonQuery();
-                    con.Close();
+                    SFCS_db.Close();
                     Fill_Response_Data("Next Stage : " + (boardfail ? reworkidinfo[1] : nextidinfo[1]));
                     Fill_Response_Data("SFCS Next Stage Update Success.");
                     break;
@@ -1535,13 +1547,13 @@ namespace K1_Stages
 
             try
             {
-                con.Close();
+                SFCS_db.Close();
 
-                SqlCommand cmd = new SqlCommand("INSERT INTO FCT VALUES('CHN1','" + lblstagename.Text + "','" + Sno + "','" + (boardfail ? "FAIL" : "PASS") + "','" + errordesc + "',FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.ffff'),'" + lblemp_id.Text + "',HOST_NAME(),'" + infosfromboard[1] + "','" + infosfromboard[0] + "','')", con);
-                if (con.State == ConnectionState.Closed)
-                    con.Open();
+                SqlCommand cmd = new SqlCommand("INSERT INTO FCT VALUES('CHN1','" + lblstagename.Text + "','" + Sno + "','" + (boardfail ? "FAIL" : "PASS") + "','" + errordesc + "',FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.ffff'),'" + lblemp_id.Text + "',HOST_NAME(),'" + infosfromboard[1] + "','" + infosfromboard[0] + "','')", SFCS_db);
+                if (SFCS_db.State == ConnectionState.Closed)
+                    SFCS_db.Open();
                 cmd.ExecuteNonQuery();
-                con.Close();
+                SFCS_db.Close();
                 Fill_Response_Data("SFCS FCT Success.");
             }
             catch (Exception ex)
@@ -1594,7 +1606,7 @@ namespace K1_Stages
             string inqry = string.Empty;
             try
             {
-                con.Close();
+                SFCS_db.Close();
 
                 inqry = "INSERT INTO EXCEPTIONLOGS_MEMORY VALUES ('" +
                         errortype + "','" +
@@ -1609,13 +1621,13 @@ namespace K1_Stages
                         "FORMAT(CURRENT_TIMESTAMP,'dd-MM-yyyy HH:mm:ss.fff')," +
                         "HOST_NAME(),'" + lblemp_id.Text + "','','')";
 
-                using (SqlCommand cmd = new SqlCommand(inqry, con))
+                using (SqlCommand cmd = new SqlCommand(inqry, SFCS_db))
                 {
-                    if (con.State == ConnectionState.Closed)
-                        con.Open();
+                    if (SFCS_db.State == ConnectionState.Closed)
+                        SFCS_db.Open();
 
                     cmd.ExecuteNonQuery();
-                    con.Close();
+                    SFCS_db.Close();
                 }
             }
             catch (Exception ex)
@@ -1625,6 +1637,57 @@ namespace K1_Stages
             }
 
         }
+
+        private void Get_Completed_Qty()
+        {
+            string inqry = string.Empty;
+
+            try
+            {
+                if (lbl_wo.Text == "NA")
+                {
+                    lbl_qty.Text = "0";
+                    return;
+                }
+
+                SFCS_db.Close();
+
+                inqry = "SELECT COUNT(DISTINCT PCBID) AS PCBCOUNT " +
+                        "FROM DASHBOARD_ESSENCOREDATAS " +
+                        "WHERE STAGENAME = '" + app_name_lbl.Text + "' " +
+                        "AND WORKORDER = '" + lbl_wo.Text + "'";
+
+                using (SqlCommand cmd = new SqlCommand(inqry, SFCS_db))
+                {
+                    if (SFCS_db.State == ConnectionState.Closed)
+                        SFCS_db.Open();
+
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        if (sdr.Read())
+                        {
+                            lbl_qty.Text = Convert.ToInt64(sdr["PCBCOUNT"]).ToString();
+                        }
+                        else
+                        {
+                            lbl_qty.Text = "0";
+                        }
+                    }
+
+                    SFCS_db.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                lbl_qty.Text = "0";
+                // optional logging
+                // Fill_Response_Data(ex.Message);
+            }
+
+            this.Refresh();
+        }
+
+
 
 
         #endregion

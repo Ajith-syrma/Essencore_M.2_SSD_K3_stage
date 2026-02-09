@@ -51,7 +51,6 @@
             lbl_prd_model = new Label();
             cmb_prdctModel = new ComboBox();
             lbl_stage_load = new Label();
-            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
@@ -67,7 +66,7 @@
             lbl_app_id.Name = "lbl_app_id";
             lbl_app_id.Size = new Size(104, 40);
             lbl_app_id.TabIndex = 4;
-            lbl_app_id.Text = "abc";
+            lbl_app_id.Text = "263";
             lbl_app_id.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lbl_hdr_app_id
@@ -93,7 +92,7 @@
             lbl_sw_version.Name = "lbl_sw_version";
             lbl_sw_version.Size = new Size(92, 40);
             lbl_sw_version.TabIndex = 6;
-            lbl_sw_version.Text = "abc";
+            lbl_sw_version.Text = "1.0.0";
             lbl_sw_version.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lbl_hdr_sw_version
@@ -112,9 +111,9 @@
             // pictureBox3
             // 
             pictureBox3.Image = (Image)resources.GetObject("pictureBox3.Image");
-            pictureBox3.Location = new Point(839, 3);
+            pictureBox3.Location = new Point(829, 3);
             pictureBox3.Name = "pictureBox3";
-            pictureBox3.Size = new Size(119, 76);
+            pictureBox3.Size = new Size(129, 76);
             pictureBox3.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox3.TabIndex = 2;
             pictureBox3.TabStop = false;
@@ -282,30 +281,17 @@
             lbl_stage_load.BackColor = Color.SteelBlue;
             lbl_stage_load.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
             lbl_stage_load.ForeColor = Color.White;
-            lbl_stage_load.Location = new Point(404, 9);
+            lbl_stage_load.Location = new Point(469, 9);
             lbl_stage_load.Name = "lbl_stage_load";
-            lbl_stage_load.Size = new Size(68, 68);
+            lbl_stage_load.Size = new Size(75, 68);
             lbl_stage_load.TabIndex = 1;
-            lbl_stage_load.Text = "K1";
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.BackColor = Color.SteelBlue;
-            label1.Font = new Font("Bahnschrift Condensed", 27.75F, FontStyle.Bold);
-            label1.ForeColor = Color.White;
-            label1.Location = new Point(469, 9);
-            label1.Name = "label1";
-            label1.Size = new Size(139, 68);
-            label1.TabIndex = 36;
-            label1.Text = "STAGE";
+            lbl_stage_load.Text = "K3";
             // 
             // K1_load
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(955, 450);
-            Controls.Add(label1);
             Controls.Add(cmb_prdctModel);
             Controls.Add(lbl_prd_model);
             Controls.Add(lbl_hdr_sw_version);
@@ -329,7 +315,8 @@
             Controls.Add(label2);
             Controls.Add(cmb_stage);
             Name = "K1_load";
-            Text = "K1_Stage_Load";
+            Text = "K3_CDI";
+            Load += K1_load_Load;
             ((System.ComponentModel.ISupportInitialize)pictureBox3).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
@@ -361,6 +348,5 @@
         private Label lbl_prd_model;
         private ComboBox cmb_prdctModel;
         private Label lbl_stage_load;
-        private Label label1;
     }
 }
